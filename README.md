@@ -26,7 +26,7 @@ and digestible market insights to guide their discussions.
 
 ## Installation Instructions
 ## Backend - Machine Learning
-The backend machine language (ML) source code is implemented in Python 3.11.  Python 3.11
+The backend machine learning (ML) source code is implemented in Python 3.11.  Python 3.11
 is the standard ML language.  Do not use any later version of Python. It would not work
 with the installed packages.
 
