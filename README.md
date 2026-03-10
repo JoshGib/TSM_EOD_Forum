@@ -44,10 +44,10 @@ the pip installer on windows machines:
 On Windows 10/11 use the following command:
 
 Run:
-$ py -m pip install pandas transformers tqdm torch scikit-learn pyarrow re
+## $ py -m pip install pandas transformers tqdm torch scikit-learn pyarrow re
 
-If the packages do not install as listed, the install the individually using
-$ py -m pip <package>
+If the packages do not install as listed, then install them individually using
+## $ py -m pip <package>
 
 Note: Ensure that the datasets appear in the same directory as the source code
 
