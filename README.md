@@ -46,7 +46,7 @@ Run:
 ## $ py -m pip install pandas transformers tqdm scikit-learn pyarrow re
 
 If the packages do not install as listed, then install them individually using
-## $ py -m pip &lt;<package>&gt;
+## $ py -m pip &lt;package&gt;
 
 Note: Ensure that the datasets appear in the same directory as the source code
 
