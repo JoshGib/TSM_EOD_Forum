@@ -4,7 +4,6 @@
 # import packages
 import pandas as pd
 from tqdm import tqdm
-import torch
 from transformers import pipeline
 import re
 
@@ -12,7 +11,7 @@ import re
 from transformers.utils import logging
 from tqdm.auto import tqdm
 
-# execute disabled commands
+# execute commands to disable logs/progress bars
 tqdm.disable = True
 logging.disable_progress_bar()
 logging.set_verbosity_error()
@@ -27,9 +26,10 @@ df = df.head(20).copy()
 summarizer = pipeline(
     "summarization",
     model="facebook/bart-large-cnn",
-    device=0 #if torch.cuda.is_available() else -1
-)
+    device=-1
+) # MACHINE PERFORMANCE: set device=0 for GPU or device=-1 for CPU
 
+# This is the summarization function for individual datapoints
 def summarize_article(text):
     if pd.isna(text) or not str(text).strip():
         return ""
@@ -51,21 +51,6 @@ for text in tqdm(df["text"], total=len(df)):
 
 df["summary"] = summaries
 
-# summarization
-def summarize_article(text):
-    if pd.isna(text) or not str(text).strip():
-        return ""
-
-    result = summarizer(
-        str(text),
-        max_length=60,
-        min_length=20,
-        do_sample=False
-    )
-
-    first = result[0]
-    return first.get("summary_text", first.get("generated_text", ""))
-
 # set sentiment model
 sentiment_model = pipeline(
     "sentiment-analysis",
@@ -81,13 +66,13 @@ def get_sentiment(text):
 
     return result["label"], result["score"]
 
-
 df[["sentiment","sentiment_score"]] = df["summary"].apply(
     lambda x: pd.Series(get_sentiment(x))
 )
 
-pattern = r"\b[A-Z]{3,4}\b"
+pattern = r"\b[A-Z]{3,4}\b" # regular expression for 3 to 4 capital letters
 
+# Function to parse text for pattern
 def extract_ticker(text):
 
     if pd.isna(text):
@@ -101,11 +86,13 @@ def extract_ticker(text):
 
 
 df["Ticker"] = df["text"].apply(extract_ticker)
+df["date"] = pd.to_datetime(df["date"]).dt.date # show date only - no time
+pd.set_option("display.max_columns", None) # Force to show all columns - no elipses
 
-print(df[["date", "summary", "sentiment", "Ticker", "sentiment_score"]].head(10))
+# echo results
+print(df[["date", "summary", "sentiment", "Ticker", "sentiment_score"]].head(20))
 
 tqdm.pandas()
 
 # save
 df.to_csv("news_sentiment_summary.csv", index=False)
-
