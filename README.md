@@ -36,7 +36,6 @@ the pip installer on windows machines:
 1. pandas
 2. transformers
 3. tqdm
-4. torch
 5. scikit-learn
 6. pyarrow
 7. re
@@ -44,7 +43,7 @@ the pip installer on windows machines:
 On Windows 10/11 use the following command:
 
 Run:
-## $ py -m pip install pandas transformers tqdm torch scikit-learn pyarrow re
+## $ py -m pip install pandas transformers tqdm scikit-learn pyarrow re
 
 If the packages do not install as listed, then install them individually using
 ## $ py -m pip <package>
