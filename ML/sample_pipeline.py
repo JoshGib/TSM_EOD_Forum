@@ -154,17 +154,8 @@ def summarize_combined_text(text):
 
     text = str(text)[:3000]
 
-    prompt = (
-        "Summarize the following financial news into a two-paragraph end-of-day market outlook.\n"
-        "First paragraph: key drivers and sectors.\n"
-        "Second paragraph: overall market tone and outlook.\n"
-        "Do not give investment advice or tell readers what to buy or sell.\n"
-        "Do not include URLs, hyperlinks, or promotional text.\n\n"
-        + text
-    )
-
     result = long_summarizer(
-        prompt,
+        text,
         max_length=700,
         min_length=390,
         do_sample=False,
