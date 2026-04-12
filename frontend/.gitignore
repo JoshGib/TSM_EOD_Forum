@@ -1,2 +1,18 @@
-node_modules
-.next
+# dependencies
+node_modules/
+
+# next.js build files
+.next/
+out/
+
+# environment variables
+.env
+
+# logs
+npm-debug.log*
+
+# OS files
+.DS_Store
+
+# prisma
+prisma/dev.db      
