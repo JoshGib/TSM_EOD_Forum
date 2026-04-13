@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [acceptedRules, setAcceptedRules] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,6 +114,25 @@ export default function SignupPage() {
               required
             />
           </div>
+
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={acceptedRules}
+              onChange={(e) => setAcceptedRules(e.target.checked)}
+              className="form-checkbox h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+
+            />
+            <span className="text-sm text-gray-700">
+              I agree to the{' '}
+              <span 
+                onClick={() => router.push('/rules')}
+                className="text-blue-600 hover:underline cursor-pointer"
+              >
+                Rules of the Forum
+              </span>
+            </span>
+          </label>
 
           <button
             type="submit"
