@@ -76,7 +76,7 @@ export function HomeComponent() {
         </p>
         <div className="flex flex-wrap gap-3">
           <a
-            href="/eod-report"
+            href="https://reinald728-tsmforum.hf.space/test_reports.html"
             className="px-6 py-3 bg-white text-blue-400 rounded-lg hover:bg-blue-50 transition-colors font-medium"
           >
             View Today's Report
