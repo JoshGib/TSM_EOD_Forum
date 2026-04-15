@@ -77,13 +77,13 @@ export function HomeComponent() {
         <div className="flex flex-wrap gap-3">
           <a
             href="https://reinald728-tsmforum.hf.space/test_reports.html"
-            className="px-6 py-3 bg-white text-blue-400 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+            className="px-6 py-3 bg-white text-blue-800 rounded-lg hover:bg-blue-50 transition-colors font-medium"
           >
             View Today's Report
           </a>
           <a
             href="/forum"
-            className="px-6 py-3 bg-blue-400 text-white rounded-lg hover:bg-blue-800 transition-colors font-medium"
+            className="px-6 py-3 bg-blue-950 text-white rounded-lg hover:bg-blue-800 transition-colors font-medium"
           >
             Join Discussion
           </a>

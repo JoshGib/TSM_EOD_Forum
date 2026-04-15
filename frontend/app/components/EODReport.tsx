@@ -69,7 +69,6 @@ const articleSources = [
 ];
 
 export function EODReport() {
-  const [isLive, setIsLive] = useState(true);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -81,7 +80,6 @@ export function EODReport() {
               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">
                 End of Day Report
               </h1>
-              <Sparkles className="w-8 h-8 text-yellow-500" />
             </div>
             <p className="text-gray-600 mb-2">
               AI-Powered Summary from Wall Street Journal Articles
@@ -92,35 +90,12 @@ export function EODReport() {
             </div>
           </div>
           <div className="mt-4 sm:mt-0">
-            <button
-              onClick={() => setIsLive(!isLive)}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors ${
-                isLive
-                  ? 'bg-red-600 text-white hover:bg-red-700'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              {isLive ? (
-                <>
-                  <Pause className="w-5 h-5" />
-                  <span>Live Updates</span>
-                  <span className="flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-white opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Play className="w-5 h-5" />
-                  <span>Paused</span>
-                </>
-              )}
-            </button>
+    
           </div>
         </div>
 
         {/* Info Banner */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start space-x-3">
+        {/* <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start space-x-3">
           <BarChart3 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-sm text-blue-900">
@@ -128,7 +103,7 @@ export function EODReport() {
               Use this information as a starting point for discussion in our community forum.
             </p>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Market Summary */}

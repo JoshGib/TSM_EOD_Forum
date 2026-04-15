@@ -131,10 +131,9 @@ export function Forum() {
         </div>
 
         {/* EOD Report Banner */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 mb-6">
+        <div className="bg-gradient-to-r from-blue-950 to-indigo-300 rounded-2xl p-8 mb-8 text-white">
           <div className="flex items-start justify-between">
             <div className="flex items-start space-x-3 flex-1">
-              <Sparkles className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-1" />
               <div className="text-white">
                 <h3 className="font-semibold mb-1">Today's End of Day Report is Available!</h3>
                 <p className="text-blue-100 text-sm mb-3">
