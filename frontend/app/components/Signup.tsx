@@ -13,10 +13,16 @@ export function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreedToRules, setAgreedToRules] = useState(false);
   const { signup } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
+    if (!agreedToRules) {
+      setError('You must agree to the forum rules before creating an account.');
+      return;
+    }
+
     e.preventDefault();
     setError('');
 
@@ -81,7 +87,7 @@ export function Signup() {
 
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
+                User Name
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -94,7 +100,7 @@ export function Signup() {
                   onChange={(e) => setName(e.target.value)}
                   required
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                  placeholder="John Doe"
+                
                 />
               </div>
             </div>
@@ -114,7 +120,7 @@ export function Signup() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                  placeholder="you@example.com"
+                
                 />
               </div>
             </div>
@@ -134,7 +140,7 @@ export function Signup() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                  placeholder="••••••••"
+              
                 />
               </div>
             </div>
@@ -154,15 +160,35 @@ export function Signup() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                  placeholder="••••••••"
+              
                 />
               </div>
             </div>
 
+            <div className="flex items-center">
+              <input
+                id="rules"
+                type="checkbox"
+                checked={agreedToRules}
+                onChange={(e) => setAgreedToRules(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="rules" className="ml-2 block text-sm text-gray-700">
+                I agree to the {''}
+                <Link href="/rules" className="text-blue-600 hover:text-blue-700 font-medium">
+                  Forum Rules
+                </Link>
+
+              </label>
+            </div>
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed font-medium"
+              disabled={loading || !agreedToRules}
+              className={
+                loading || !agreedToRules
+                  ? 'w-full py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed'
+                  : 'w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
+              }
             >
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
@@ -172,7 +198,7 @@ export function Signup() {
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
               <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-                Sign in
+                Login
               </Link>
             </p>
           </div>

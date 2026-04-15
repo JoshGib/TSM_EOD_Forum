@@ -41,15 +41,6 @@ export function Login() {
           <p className="text-gray-600">Your gateway to accessible financial education</p>
         </div>
 
-        {/* Platform Info */}
-        <div className="bg-white rounded-xl border border-blue-200 p-4 mb-6">
-          <div className="flex items-start space-x-3">
-            <Users className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-700">
-              Join our community of first-time investors learning to navigate financial markets with confidence through daily EOD reports and peer discussions.
-            </p>
-          </div>
-        </div>
 
         {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -76,7 +67,7 @@ export function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                  placeholder="you@example.com"
+      
                 />
               </div>
             </div>
@@ -96,7 +87,7 @@ export function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                  placeholder="••••••••"
+                  
                 />
               </div>
             </div>
@@ -106,7 +97,7 @@ export function Login() {
               disabled={loading}
               className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-blue-400 disabled:cursor-not-allowed font-medium"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? 'Signing in...' : 'Login'}
             </button>
           </form>
 
@@ -119,12 +110,7 @@ export function Login() {
             </p>
           </div>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-xs text-gray-500 text-center">
-              Demo: Use any email and password to login
-            </p>
-          </div>
+
         </div>
       </div>
     </div>
