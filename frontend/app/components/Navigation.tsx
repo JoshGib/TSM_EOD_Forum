@@ -12,7 +12,6 @@ export function Navigation() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
   const handleLogout = () => {
     logout();
     router.push('/login');
@@ -89,7 +88,7 @@ export function Navigation() {
                   <div className="hidden md:flex items-center space-x-3">
                     <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-sm font-medium">
-                        {user?.name.charAt(0).toUpperCase()}
+                        {user?.name?.charAt(0)?.toUpperCase()||'?'}
                       </span>
                     </div>
                     <span className="text-sm text-gray-700">{user?.name}</span>
@@ -180,7 +179,7 @@ export function Navigation() {
                 <div className="flex items-center space-x-3 px-4 py-2">
                   <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-medium">
-                      {user?.name.charAt(0).toUpperCase()}
+                      {user?.name?.charAt(0)?.toUpperCase()||'?'}
                     </span>
                   </div>
                   <span className="text-sm text-gray-700">{user?.name}</span>

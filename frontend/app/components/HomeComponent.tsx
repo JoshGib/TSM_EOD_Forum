@@ -1,5 +1,7 @@
+'use client';
 import { TrendingUp, TrendingDown, DollarSign, Activity, ExternalLink, BookOpen, Lightbulb, Users, BarChart } from 'lucide-react';
-
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../contexts/AuthContext';
 const marketNews = [
   {
     id: 1,
@@ -63,6 +65,16 @@ const tradingApps = [
 ];
 
 export function HomeComponent() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  const handleJoinDiscussion = () => {
+    if (!user) {
+      router.push('/signup?redirect=/forum');
+    }
+    else{
+      router.push('/forum');
+    }
+  };
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Hero Section */}
@@ -81,12 +93,12 @@ export function HomeComponent() {
           >
             View Today's Report
           </a>
-          <a
-            href="/forum"
-            className="px-6 py-3 bg-blue-950 text-white rounded-lg hover:bg-blue-800 transition-colors font-medium"
+          <button
+            onClick={handleJoinDiscussion}
+            className="px-6 py-3 bg-blue-400 text-white rounded-lg hover:bg-blue-800 transition-colors font-medium"
           >
             Join Discussion
-          </a>
+          </button>
         </div>
       </div>
 
