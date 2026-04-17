@@ -69,7 +69,7 @@ export function HomeComponent() {
   const { user, loading } = useAuth();
   const handleJoinDiscussion = () => {
     if (!user) {
-      router.push('/signup?redirect=/forum');
+      router.push('/login?redirect=/forum');
     }
     else{
       router.push('/forum');

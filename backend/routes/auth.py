@@ -30,10 +30,12 @@ def signup(user: UserSignup, db: Session = Depends(get_db)):
 
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.username == user.username).first()
+
+    print("LOGIN REQUEST:", user)
+    db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user:
-        raise HTTPException(status_code=400, detail="Invalid username or password")
+        raise HTTPException(status_code=404, detail="Email not found")
     if not verify_password(user.password, db_user.hashed_password):
-        raise HTTPException(status_code=400, detail="Invalid password")
+        raise HTTPException(status_code=401, detail="Invalid password")
     access_token = create_access_token({"user_id": db_user.id})
     return {"access_token": access_token, "token_type": "bearer", "username": db_user.username}

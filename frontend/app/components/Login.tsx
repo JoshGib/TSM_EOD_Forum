@@ -2,28 +2,30 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { TrendingUp, Mail, Lock, AlertCircle, Users } from 'lucide-react';
+import {useSearchParams, useRouter} from 'next/navigation';
 
 export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, error} = useAuth();
+  const searchParams = useSearchParams();
   const router = useRouter();
+
+  const redirect = searchParams.get('redirect') || '/';
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+
     setLoading(true);
 
     try {
       await login(email, password);
-      router.push('/');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid email or password');
+      router.push(redirect);
     } finally {
       setLoading(false);
     }

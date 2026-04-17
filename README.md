@@ -50,3 +50,174 @@ If the packages do not install as listed, then install them individually using
 
 Note: Ensure that the datasets appear in the same directory as the source code
 
+
+HOW TO SET UP THE PROJECT   
+
+1. Clone the repository and move to the project file
+git clone <repo-url>
+cd Group-3---Main
+
+2. PostgreSQL setup
+    1. Make sure PostgreSQL is running
+    sudo service postgresql start
+
+    2. Open PostgreSQL shell
+    sudo -u postgresql psql
+
+    3. Inside shell create the data base and user
+    CREATE DATABASE forum_db;
+    CREATE USER forum_user WITH PASSWORD 'password123'
+    GRANT ALL PRIVILIGES ON DATABASE forum_bd TO forum_user
+    \c forum_db
+    GRANT ALL SCHEMA public TO forum_user;
+
+    4. if tables already exist, make sure the correct ownership is set
+
+    ALTER TABLE users OWNER TO forum_user;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO forum_user;
+    GRANT ALL PRIVILAGES ON ALL SEQUENCES IN SCHEMA public TO forum_user;
+
+    5. exit PostgreSQL
+    \q
+
+3. Backend setup (FastAPI)
+    1. Go to backend folder
+    cd backend
+    
+    2. Create a virtual enviroment
+    python3 -m venv venv
+    source venv/bin/active
+
+    3. isntal dependencies
+    pip install fastapi uvicorn sqlalchemy psycopg2-binary passlib bcrypt python-jose
+    
+    4. Run the backend server
+    uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+4. API endpoints
+    1. Authentication routes:
+    * POST /auth/signup
+    * POST /auth/login
+
+To test sigup manually in ../Group-3--Main
+curl -X POST http://127.0.0.1:8000/auth/signup \
+-H "Content-Type: application/json" \
+-d '{"username":"test","email":"test@test.com","password":"123"}'
+
+and also test login
+curl -X POST http://127.0.0.1:8000/auth/login \
+-H "Content-Type: application/json" \
+-d '{"email":"test@test.com","password":"123"}'
+5. Frontend setup (Next.js)
+    1. Go to front end folder
+    cd frontend
+    2. install dependecies
+    npm install
+
+    3. start the development server
+    npm run dev
+
+
+6. Common setup issiues and fixes
+    1. Git// pull/reabse errors
+    git add .
+    git commit -m " ... "
+    git pull origin main --rebase
+    
+
+    or 
+
+    git stash
+    git pull origin main --rebase
+    git stash pop
+
+    2.  Next.js/ frontend issues
+    "Can't resolve tailwinds"
+    broken or incomplete npm install
+
+    cd frontend
+    rm -rf node_modules package-lock.json
+    npm install
+    npm install -D tailwindcss@3 postcss autoprefixer
+
+
+    "Module not found: Can't resolve 'v8'"
+
+    rm -rf node_modules .next package-lock.json
+    npm install
+    npm run dev
+
+    Warning: multiple lockfiles detected
+    projetc has lockfiles in both rooth and frontend. keep only this one:
+    frontend/package-lock.json
+
+    rm package-lock.json
+
+    3. Backend/FastAPI Issues
+    Error: curl request hangs (no response)
+    Cause:
+    PostgreSQL not runningg
+    DB conncetion stuck
+    AQLAlchemy blocking request
+
+    sudo systemcall start postgresql
+
+    check backend logs, what is going on on the back end
+
+    unicorn main:app --reload --log-level debug
+
+    4. Database Issues
+    Sigup is slow or freezes
+    DB connction issue
+    missing connetion pooling
+    bycryptr passwaord hasing delay
+
+    engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10
+    )
+
+    DATABASE_URL not working, each one of us needs to create its own databse
+    create .env insite backend
+
+    touch .env
+
+    inside .env write:
+
+    #Replace the values below with your local postgreSQL
+    DATABASE_URL = postgresql://your_username:your_password@LOCALHOST:5432/your_database_name
+
+    1. Backend
+    if port 8000 or 3000 is already in use
+    lsof -i :8000
+    kill -9 <PID>
+
+    lsof -i :3000
+    kill -9 <PID>
+
+
+    if nothing works  
+    uvicorn main:app --reload --log-level debug
+
+    2. Database
+        1. To inspect the the database
+        sudo -u postgres psql
+
+        then connect
+        \c forum_db
+
+        tos ee stored susers:
+        SELECT * FROM users;
+    
+
+
+Stack used
+    Next.js
+    fastAPI,
+    PostgreSQL,
+    SQLAlchemy,
+    JWT authentication, 
+    bycrypt hashing
+

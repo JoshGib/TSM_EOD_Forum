@@ -15,6 +15,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   loading: boolean;
+  error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,14 +23,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Initialize from localStorage on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
+        setUser(JSON.parse(storedUser));
       } catch (error) {
         localStorage.removeItem('user');
       }
@@ -38,36 +39,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
+    setError(null);
     const res = await fetch("http://127.0.0.1:8000/auth/login", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-
+    
+    const data = await res.json();
     if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Login failed');
+      setError(data.detail || 'Login failed');
+      return;
     }
 
-    const data = await res.json();
-    setUser(data.user);
-    localStorage.setItem('user', JSON.stringify(data.user));
+    const userData: User = {
+      id: data.user_id || '',
+      email,
+      name: data.username || '',
+    };
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const signup = async (name: string, email: string, password: string) => {
+    setError(null);
     const res = await fetch("http://127.0.0.1:8000/auth/signup", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: name, email, password }),
     });
 
+    const data = await res.json();
     if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Signup failed');
+      setError(data.detail || 'Signup failed');
+      return;
     }
 
-    const data = await res.json();
-    const userData = {
+    const userData: User = {
       id: data.id,
       email: data.email,
       name: data.username,
@@ -89,7 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       isAuthenticated: !!user,
       loading,
-    }}>
+      error
+    }}
+  >
       {children}
     </AuthContext.Provider>
   );

@@ -198,7 +198,7 @@ export function Navigation() {
             {!isAuthenticated && (
               <div className="pt-3 border-t border-gray-200 space-y-2">
                 <Link
-                  href="/login"
+                  href="/login?redirect=/"
                   onClick={() => setMobileMenuOpen(false)}
                   className="block w-full px-4 py-3 text-center text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
