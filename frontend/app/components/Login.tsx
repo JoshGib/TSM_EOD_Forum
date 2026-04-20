@@ -26,6 +26,8 @@ export function Login() {
     try {
       await login(email, password);
       router.push(redirect);
+    }catch (err) {
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }

@@ -49,7 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await res.json();
     if (!res.ok) {
       setError(data.detail || 'Login failed');
-      return;
+      setUser(null);
+      localStorage.removeItem('user');
+      throw new Error(data.detail || 'Login failed');
     }
 
     const userData: User = {
