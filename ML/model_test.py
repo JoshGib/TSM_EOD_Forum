@@ -101,7 +101,8 @@ for trade_day, row in tqdm(df.iterrows(), total=len(df)):
         "daily_summary_sentiment": label,
         "daily_summary_sentiment_score": score,
         "overall_article_signal": overall_signal,
-        "combined_article_summaries": combined_text
+        "combined_article_summaries": combined_text,
+        "url": row["url"]
     })
 
 pd.DataFrame(test_daily_rows).to_csv(TEST_OUTPUT, index=False)

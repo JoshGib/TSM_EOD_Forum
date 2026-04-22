@@ -187,15 +187,24 @@ for trade_day in tqdm(test_days):
     day_df = df[df["trade_day"] == trade_day].copy()
     day_df = select_top_k_articles(day_df)
 
-    texts = day_df.sort_values("date")["text"].tolist()
+    # sort to keep alignment consistent
+    day_df = day_df.sort_values("date")
 
-    combined = "\n\n".join(
+    texts = day_df["text"].tolist()
+    urls = day_df["url"].tolist()
+
+    # combine text
+    combined_text = "\n\n".join(
         f"Article {i+1}: {t}" for i, t in enumerate(texts)
     )
 
+    # keep urls aligned (important: same order as text)
+    combined_urls = " | ".join(urls)
+
     test_rows.append({
         "trade_day": trade_day,
-        "original_text": combined
+        "original_text": combined_text,
+        "urls": combined_urls
     })
 
 pd.DataFrame(test_rows).to_csv(TEST_OUTPUT, index=False)
