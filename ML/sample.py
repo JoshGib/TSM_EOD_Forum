@@ -18,9 +18,6 @@ logging.set_verbosity_error()
 # Lad data
 df = pd.read_parquet("yahoo_finance_felixdrinkall.000.parquet")
 
-# Save a preview for inspection
-df.sample(min(100, len(df)), random_state=42).to_csv("dataset_preview_1.csv", index=False)
-
 # Clean date column
 df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
@@ -29,16 +26,13 @@ df = df.dropna(subset=["date", "text"]).copy()
 df["text"] = df["text"].astype(str).str.strip()
 df = df[df["text"] != ""].copy()
 
-# Parse extra fields (the ticker infroamtion from the yahoo articles)
-def parse_extra_fields(x):
-    if pd.isna(x):
-        return {}
-    try:
-        return json.loads(x)
-    except Exception:
-        return {}
+df['extra_fields'] = df['extra_fields'].apply(json.loads)
+extra_df = pd.json_normalize(df['extra_fields'])
 
-df["extra_fields_parsed"] = df["extra_fields"].apply(parse_extra_fields)
+# Merge back into main dataframe
+df = pd.concat([df.drop(columns=['extra_fields']), extra_df], axis=1)
+df = df[["date", "text", "url"]]
+
 
 # Use calendar date only
 df["trade_day"] = df["date"].dt.date
