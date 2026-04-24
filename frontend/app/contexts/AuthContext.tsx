@@ -6,6 +6,7 @@ interface User {
   id: string;
   email: string;
   name: string;
+  role: string;
 }
 
 interface AuthContextType {
@@ -54,10 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(data.detail || 'Login failed');
     }
 
+    setUser(data.user);
+    localStorage.setItem('user', JSON.stringify(data.user));
+
     const userData: User = {
-      id: data.user_id || '',
+      id: data.user.id || '',
       email,
-      name: data.username || '',
+      name: data.user.username || '',
+      role: data.user.role || '',
     };
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
@@ -81,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: data.id,
       email: data.email,
       name: data.username,
+      role: data.role || 'user',
     };
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));

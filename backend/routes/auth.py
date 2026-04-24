@@ -21,12 +21,12 @@ def signup(user: UserSignup, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="Username or email already exists")
     hashed_password = hash_password(user.password)
-    new_user = User(username=user.username, email=user.email, hashed_password=hashed_password)
+    new_user = User(username=user.username, email=user.email, hashed_password=hashed_password, role='user')
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"staus": "ok"}
+    return {"status": "ok"}
 
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):
@@ -37,5 +37,14 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Email not found")
     if not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid password")
-    access_token = create_access_token({"user_id": db_user.id})
-    return {"access_token": access_token, "token_type": "bearer", "username": db_user.username}
+    access_token = create_access_token({"user_id": db_user.id, "role": db_user.role})
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer", 
+        "user": {
+            "id": db_user.id,
+            "username": db_user.username,
+            "email": db_user.email,
+            "role": db_user.role
+        }
+    }
