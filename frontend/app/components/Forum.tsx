@@ -123,7 +123,7 @@ export function Forum() {
           </div>
           <button
             onClick={() => setShowNewThreadModal(true)}
-            className="mt-4 sm:mt-0 flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="mt-4 sm:mt-0 flex items-center space-x-2 px-6 py-3 bg-blue-950 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             <Plus className="w-5 h-5" />
             <span>New Thread</span>
@@ -141,7 +141,7 @@ export function Forum() {
                 </p>
                 <a
                   href="/eod-report"
-                  className="inline-flex items-center space-x-2 px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
+                  className="inline-flex items-center space-x-2 px-4 py-2 bg-white text-blue-900 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>View EOD Report</span>
