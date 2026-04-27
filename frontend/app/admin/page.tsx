@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { AdminRoute } from '../components/ProtectedRoute';
 import { Shield, ChevronDown, ChevronUp, Trash2, Ban, AlertTriangle } from 'lucide-react';
 
 interface FlagReason {
@@ -93,7 +94,7 @@ const mockReportedComments: ReportedComment[] = [
   },
 ];
 
-export default function AdminPage() {
+function AdminPageContent() {
   const [reports, setReports] = useState<ReportedComment[]>(mockReportedComments);
   const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set());
 
@@ -312,5 +313,13 @@ export default function AdminPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <AdminRoute>
+      <AdminPageContent />
+    </AdminRoute>
   );
 }

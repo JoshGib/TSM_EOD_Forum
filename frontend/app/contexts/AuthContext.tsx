@@ -42,6 +42,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     setError(null);
+
+    // Demo admin user logic
+    if (email === 'admin@example.com' && password === 'password') {
+      const demoAdminUser: User = {
+        id: 'admin-123',
+        email: 'admin@example.com',
+        name: 'Demo Admin',
+        role: 'admin',
+        isAdmin: true,
+      };
+      setUser(demoAdminUser);
+      localStorage.setItem('user', JSON.stringify(demoAdminUser));
+      return;
+    }
+
     const res = await fetch("http://127.0.0.1:8000/auth/login", {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -56,14 +71,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(data.detail || 'Login failed');
     }
 
-    setUser(data.user);
-    localStorage.setItem('user', JSON.stringify(data.user));
-
     const userData: User = {
       id: data.user.id || '',
       email,
       name: data.user.username || '',
       role: data.user.role || '',
+      isAdmin: data.user.role === 'admin',
     };
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
