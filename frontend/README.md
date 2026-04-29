@@ -4,13 +4,13 @@ A modern, responsive web application for trading discussions and market insights
 
 ## Features
 
-- 📱 **Fully Responsive Design** - Optimized for desktop, tablet, and mobile devices
-- 🔍 **Search Functionality** - Search through forum posts and discussions
-- 👤 **User Authentication** - Secure login and signup system
-- 📊 **EOD Reports** - Daily end-of-day market reports summarized from The Wall Street Journal
-- 💬 **Forum Discussions** - Structured discussions for community learners
-- 📚 **Educational Resources** - Curated content and trading app links for beginners
-- 🎯 **Responsive Navigation** - Mobile-friendly hamburger menu with search integration
+- **Fully Responsive Design** - Optimized for desktop, tablet, and mobile devices
+- **Search Functionality** - Search through forum posts and discussions
+- **User Authentication** - Secure login and signup system
+- **EOD Reports** - Daily end-of-day market reports summarized from The Wall Street Journal
+- **Forum Discussions** - Structured discussions for community learners
+- **Educational Resources** - Curated content and trading app links for beginners
+- **Responsive Navigation** - Mobile-friendly hamburger menu with search integration
 
 ## Tech Stack
 
