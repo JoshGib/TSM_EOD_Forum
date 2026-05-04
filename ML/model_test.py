@@ -11,14 +11,14 @@ from transformers import pipeline
 from transformers.utils import logging
 
 # Settings
-INPUT_CSV = "test_original.csv"
+INPUT_CSV = "test_original_texts.csv"
 
 LONG_SUMMARIZER_MODEL = "./eod_summmary_bart"
 SENTIMENT_MODEL = "ProsusAI/finbert"
 
 
 
-TEST_OUTPUT = "test_original_texts.csv"
+TEST_OUTPUT = "test_original_generated_texts.csv"
 
 logging.disable_progress_bar()
 logging.set_verbosity_error()
@@ -37,12 +37,17 @@ long_summarizer = pipeline(
     max_length=1024
 )
 
-sentiment_model = pipeline("sentiment-analysis", model=SENTIMENT_MODEL, device=-1)
-
+sentiment_model = pipeline(
+    "sentiment-analysis",
+    model=SENTIMENT_MODEL,
+    device=-1,
+    truncation=True,
+    max_length=512
+)
 # Helper functions
 
 def batch_get_sentiment(texts, batch_size=16):
-    cleaned_texts = [str(t)[:512] if t else "" for t in texts]
+    cleaned_texts = [str(t) if t else "" for t in texts]
 
     valid_idx = [i for i, t in enumerate(cleaned_texts) if t]
     valid_texts = [cleaned_texts[i] for i in valid_idx]
@@ -59,7 +64,6 @@ def batch_get_sentiment(texts, batch_size=16):
 
 def summarize_combined_text(text):
     
-    text = str(text)[:3000]
 
 
     result = long_summarizer(
@@ -74,7 +78,7 @@ def summarize_combined_text(text):
 
 
 def get_sentiment(text):
-    r = sentiment_model(str(text)[:512])[0]
+    r = sentiment_model(str(text))[0]
     return r["label"], float(r["score"])
 
 
@@ -102,7 +106,7 @@ for trade_day, row in tqdm(df.iterrows(), total=len(df)):
         "daily_summary_sentiment_score": score,
         "overall_article_signal": overall_signal,
         "combined_article_summaries": combined_text,
-        "url": row["url"]
+        "url": row["urls"]
     })
 
 pd.DataFrame(test_daily_rows).to_csv(TEST_OUTPUT, index=False)

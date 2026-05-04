@@ -24,9 +24,7 @@ from transformers.utils import logging
 logging.disable_progress_bar()
 logging.set_verbosity_error()
 
-# -----------------------------
 # LOAD DATA
-# -----------------------------
 df = pd.read_parquet("yahoo_finance_felixdrinkall.000.parquet")
 
 # Save a preview for inspection
@@ -40,9 +38,7 @@ df = df.dropna(subset=["date", "text"]).copy()
 df["text"] = df["text"].astype(str).str.strip()
 df = df[df["text"] != ""].copy()
 
-# -----------------------------
 # PARSE extra_fields JSON
-# -----------------------------
 def parse_extra_fields(x):
     if pd.isna(x):
         return {}
@@ -168,10 +164,8 @@ sentiment_model = pipeline(
 # FUNCTIONS
 
 def summarize_article(text):
-    if pd.isna(text) or not str(text).strip():
-        return ""
 
-    text = str(text)[:3000]
+    text = str(text)
 
     result = summarizer(
         text,
@@ -184,10 +178,9 @@ def summarize_article(text):
     return first.get("summary_text", first.get("generated_text", "")).strip()
 
 def summarize_daily_text(text):
-    if not text or not str(text).strip():
-        return ""
 
-    text = str(text)[:3500]
+
+    text = str(text)
 
     result = summarizer(
         text,

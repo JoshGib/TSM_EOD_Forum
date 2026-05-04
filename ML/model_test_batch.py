@@ -41,7 +41,6 @@ long_summarizer.tokenizer.model_max_length = 1024
 
 
 def summarize_combined_text(text):    
-    text = str(text)[:3000]
 
     result = long_summarizer(
         text,

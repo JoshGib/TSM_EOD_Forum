@@ -7,20 +7,18 @@
     The pipeline first loads and cleans the article data by:
     - Reading the filtered CSV file
     - Converting 'date' and 'trade_day' into datetime format
-    - Removing empty article text
-    - Keeping only trade days that have at least 20 articles
 
     The valid trade days are then split into:
     - Test days: the first 55 valid trade days
     - Train days: all remaining valid trade days
 
     For each day:
-    - The top 20 articles are selected
+    - The top 10 articles are selected
     - If 'relevance_score' exists, the highest scoring articles are chosen
     - Otherwise, the earliest articles are used
 
     For training days:
-    - Each article is summarized using 'sshleifer/distilbart-cnn-12-6'
+    - Each article is summarized using 'sshleifer/distilbart-cnn-12-6' if it is more than 90 tokens long, otherwise the original text is used
     - Sentiment is computed for each article summary using 'ProsusAI/finbert'
     - Sentiment labels are converted into bullish, bearish, or neutral article signals
     - The article summaries are combined into one text block
@@ -29,8 +27,9 @@
     - Daily bullish, bearish, and neutral article counts are stored
 
     For test days:
-    - Only the original article texts are combined and saved
-    - No summaries or sentiment are generated for the test set
+    - Each article is summarized using 'sshleifer/distilbart-cnn-12-6' if they are more than 90 tokens long, otherwise the original text is used
+    - combined article summaries are created but no sentiment is computed
+    - The original article text is also stored for testing
 
     The final outputs created are:
     - train_article_details.csv
@@ -38,7 +37,7 @@
     - train_daily_summaries.csv
         Contains the generated end-of-day summaries and overall sentiment metrics
     - train_reports.txt
-        Contains a text report of all generated daily summaries
+        Contains a text report of all generated daily summaries (for display and reading)
     - test_original_texts.csv
         Contains original article text grouped by trade day for testing
 
@@ -51,6 +50,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 from transformers import pipeline
 from transformers.utils import logging
+from transformers import AutoTokenizer
 
 # Settings
 INPUT_CSV = "filtered_articles.csv"
@@ -59,7 +59,7 @@ ARTICLE_SUMMARIZER_MODEL = "sshleifer/distilbart-cnn-12-6"
 LONG_SUMMARIZER_MODEL = "facebook/bart-large-cnn"
 SENTIMENT_MODEL = "ProsusAI/finbert"
 
-TOP_K_PER_DAY = 20
+TOP_K_PER_DAY = 10
 TEST_DAYS_COUNT = 55
 
 TRAIN_DAILY_OUTPUT = "train_daily_summaries.csv"
@@ -90,23 +90,18 @@ train_days = valid_days[TEST_DAYS_COUNT:]
 print(f"Test days: {len(test_days)}")
 print(f"Train days: {len(train_days)}")
 
-# Load models for training only
+# Load models for training 
 article_summarizer = pipeline("summarization", model=ARTICLE_SUMMARIZER_MODEL, device=-1)
 long_summarizer = pipeline("summarization", model=LONG_SUMMARIZER_MODEL, device=-1)
 sentiment_model = pipeline("sentiment-analysis", model=SENTIMENT_MODEL, device=-1)
+tokenizer = long_summarizer.tokenizer
 
-# Helper functions
+
 def select_top_k_articles(day_df):
-    if "relevance_score" in day_df.columns:
-        return day_df.sort_values(
-            by=["relevance_score", "date"],
-            ascending=[False, True]
-        ).head(TOP_K_PER_DAY).copy()
-    else:
-        return day_df.sort_values(
-            by=["date"],
-            ascending=[True]
-        ).head(TOP_K_PER_DAY).copy()
+    return day_df.sort_values(
+        by=["relevance_score", "date"],
+        ascending=[False, True]
+    ).head(TOP_K_PER_DAY).copy()
 
 
 def batch_summarize_articles(texts, batch_size=8):
@@ -119,8 +114,8 @@ def batch_summarize_articles(texts, batch_size=8):
     if valid_texts:
         results = article_summarizer(
             valid_texts,
-            max_length=120,
-            min_length=40,
+            max_length=90,
+            min_length=50,
             do_sample=False,
             batch_size=batch_size,
             truncation=True
@@ -132,27 +127,27 @@ def batch_summarize_articles(texts, batch_size=8):
     return outputs
 
 
-def batch_get_sentiment(texts, batch_size=16):
-    cleaned_texts = [str(t)[:512] if t else "" for t in texts]
+def batch_get_sentiment(texts, batch_size=10):
+    outputs = [(None, None)] * len(texts)
 
-    valid_idx = [i for i, t in enumerate(cleaned_texts) if t]
-    valid_texts = [cleaned_texts[i] for i in valid_idx]
+    for start in range(0, len(texts), batch_size):
+        batch_texts = [str(t) for t in texts[start:start + batch_size]]
 
-    outputs = [(None, None)] * len(cleaned_texts)
+        results = sentiment_model(
+            batch_texts,
+            truncation=True,   
+            max_length=512
+        )
 
-    if valid_texts:
-        results = sentiment_model(valid_texts, batch_size=batch_size)
-        for i, r in zip(valid_idx, results):
-            outputs[i] = (r["label"], float(r["score"]))
+        for i, r in enumerate(results):
+            outputs[start + i] = (r["label"], float(r["score"]))
 
     return outputs
 
 
 def summarize_combined_text(text):
-    if not text:
-        return ""
 
-    text = str(text)[:3000]
+    text = str(text)
 
     result = long_summarizer(
         text,
@@ -165,11 +160,9 @@ def summarize_combined_text(text):
     return result[0]["summary_text"].strip()
 
 
-def get_sentiment(text):
-    if not text:
-        return None, None
-    r = sentiment_model(str(text)[:512])[0]
-    return r["label"], float(r["score"])
+
+def get_token_length(text):
+    return len(tokenizer.encode(text, truncation=True))
 
 
 def article_signal(label):
@@ -179,26 +172,45 @@ def article_signal(label):
     return "bullish" if label == "positive" else "bearish" if label == "negative" else "neutral"
 
 
-# Build test set (original text only)
+# Build test set 
 test_rows = []
 
 print("\nBuilding test set...")
 for trade_day in tqdm(test_days):
+
     day_df = df[df["trade_day"] == trade_day].copy()
     day_df = select_top_k_articles(day_df)
-
-    # sort to keep alignment consistent
     day_df = day_df.sort_values("date")
 
     texts = day_df["text"].tolist()
     urls = day_df["url"].tolist()
 
-    # combine text
+    # Split into short or long (90 tokens cut off)
+    short_items = []
+    long_texts = []
+    long_indices = []
+
+    for idx, text in enumerate(texts):
+        if get_token_length(text) < 90:
+            short_items.append((idx, text))
+        else:
+            long_texts.append(text)
+            long_indices.append(idx)
+    # Summarize only long texts
+    long_summaries = batch_summarize_articles(long_texts, batch_size=8) if long_texts else []
+    # Reconstruct summaries in correct order
+    final_articles = [""] * len(texts)
+    # Fill short (no summarization) 
+    for idx, text in short_items:
+        final_articles[idx] = str(text).strip().replace("\n", " ")
+    # Fill long (summarized)
+    for idx, summary in zip(long_indices, long_summaries):
+        final_articles[idx] = summary.strip()
+
     combined_text = "\n\n".join(
-        f"Article {i+1}: {t}" for i, t in enumerate(texts)
+        f"Article {i+1}: {t}" for i, t in enumerate(final_articles)
     )
 
-    # keep urls aligned (important: same order as text)
     combined_urls = " | ".join(urls)
 
     test_rows.append({
@@ -209,6 +221,7 @@ for trade_day in tqdm(test_days):
 
 pd.DataFrame(test_rows).to_csv(TEST_OUTPUT, index=False)
 print(f"Saved test file: {TEST_OUTPUT}")
+
 
 # Build train set
 train_article_rows = []
@@ -222,10 +235,31 @@ for i, trade_day in enumerate(tqdm(train_days), start=1):
 
     # Article summaries
     texts = day_df["text"].tolist()
-    summaries = []
+    # Split into short or long (90 tokens cut off)
+    short_items = []
+    long_texts = []
+    long_indices = []
 
-    for start in range(0, len(texts), 8):
-        summaries.extend(batch_summarize_articles(texts[start:start+8]))
+    for idx, text in enumerate(texts):
+        if get_token_length(text) < 90:
+            short_items.append((idx, text))
+        else:
+            long_texts.append(text)
+            long_indices.append(idx)
+
+    # Summarize only long texts
+    long_summaries = batch_summarize_articles(long_texts, batch_size=8) if long_texts else []
+
+    # Reconstruct summaries in correct order
+    summaries = [""] * len(texts)
+
+    # Fill short (no summarization)
+    for idx, text in short_items:
+        summaries[idx] = str(text).strip().replace("\n", " ")
+
+    # Fill long (summarized)
+    for idx, summary in zip(long_indices, long_summaries):
+        summaries[idx] = summary.strip()
 
     day_df["summary"] = summaries
 
@@ -247,7 +281,6 @@ for i, trade_day in enumerate(tqdm(train_days), start=1):
     )
 
     daily_summary = summarize_combined_text(combined)
-    label, score = get_sentiment(daily_summary)
 
     pos = (day_df["sentiment"] == "positive").sum()
     neg = (day_df["sentiment"] == "negative").sum()
@@ -264,8 +297,6 @@ for i, trade_day in enumerate(tqdm(train_days), start=1):
         "negative_articles": int(neg),
         "neutral_articles": int((day_df["sentiment"] == "neutral").sum()),
         "overall_article_signal": overall,
-        "daily_summary_sentiment": label,
-        "daily_summary_sentiment_score": score
     })
 
 

@@ -107,7 +107,7 @@ df["relevance_score"] = df["text"].apply(relevance_score)
 df = df[df["relevance_score"] > 0].copy()
 
 day_counts = df["trade_day"].value_counts()
-valid_days = day_counts[day_counts >= 20]
+valid_days = day_counts[day_counts >= 10]
 valid_day_list = valid_days.index
 df_final = df[df["trade_day"].isin(valid_day_list)].copy()
 df_final.to_csv("filtered_articles.csv", index=False)

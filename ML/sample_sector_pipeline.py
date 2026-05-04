@@ -111,10 +111,9 @@ def summarize_articles(texts, batch_size=5):
 
 
 def summarize_eod(text):
-    if not text:
-        return ""
 
-    text = str(text)[:3000]
+
+    text = str(text)
 
     result = long_summarizer(
         text,
@@ -155,18 +154,13 @@ for row in tqdm(train_df.itertuples(index=False), total=len(train_df), desc="Day
 
     
     
-    combined = (
-    f"Today in the {row.sector} sector:\n\n"
-    + "\n\n".join(
-        f"Article {i+1}: {s}"
-        for i, s in enumerate(article_summaries)
-        if s
+    combined_text = "\n\n".join(
+    f"Article {i+1}: {t}" for i, t in enumerate(article_summaries)
     )
-)
 
     
     
-    eod_summary = summarize_eod(combined)
+    eod_summary = summarize_eod(combined_text)
 
     train_rows.append({
         "date": row.date,
@@ -176,7 +170,7 @@ for row in tqdm(train_df.itertuples(index=False), total=len(train_df), desc="Day
         "article_3": article_summaries[2],
         "article_4": article_summaries[3],
         "article_5": article_summaries[4],
-        "combined_article_summaries": combined,
+        "combined_article_summaries": combined_text,
         "generated_eod_summary": eod_summary
     })
 
@@ -211,13 +205,8 @@ for row in tqdm(test_df_final.itertuples(index=False), total=len(test_df_final),
     for text in tqdm(articles, desc="Summarizing test articles", leave=False):
         article_summaries.append(summarize_articles([text])[0])
 
-    combined = (
-        f"Today in the {row.sector} sector:\n\n"
-        + "\n\n".join(
-            f"Article {i+1}: {s}"
-            for i, s in enumerate(article_summaries)
-            if s
-        )
+    combined_text = "\n\n".join(
+    f"Article {i+1}: {t}" for i, t in enumerate(article_summaries)
     )
 
     combined_urls = " | ".join([u for u in urls if pd.notna(u)])
@@ -227,7 +216,7 @@ for row in tqdm(test_df_final.itertuples(index=False), total=len(test_df_final),
         "sector": row.sector,
         "original_articles": articles,
         "article_urls": urls,
-        "combined_article_summaries": combined,
+        "combined_article_summaries": combined_text,
         "urls": combined_urls
     })
 
