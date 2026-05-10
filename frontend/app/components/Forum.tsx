@@ -1,6 +1,16 @@
 import { useState } from 'react';
-import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles, Send, Flag, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+
+interface Comment {
+  id: string;
+  threadId: number;
+  author: string;
+  authorId: string;
+  content: string;
+  likes: number;
+  timeAgo: string;
+}
 
 interface Thread {
   id: number;
@@ -95,10 +105,81 @@ const categories = [
   'Strategies',
 ];
 
+const mockComments: Comment[] = [
+  {
+    id: 'c1',
+    threadId: 1,
+    author: 'TechInvestor99',
+    authorId: 'u123',
+    content: 'Great analysis! I think the AI chip demand is really driving this. NVIDIA\'s data center revenue has been incredible.',
+    likes: 8,
+    timeAgo: '1 hour ago',
+  },
+  {
+    id: 'c2',
+    threadId: 1,
+    author: 'MarketNewbie',
+    authorId: 'u456',
+    content: 'As a beginner, should I be buying NVIDIA at these levels or wait for a pullback?',
+    likes: 3,
+    timeAgo: '45 minutes ago',
+  },
+  {
+    id: 'c3',
+    threadId: 1,
+    author: 'ValueHunter',
+    authorId: 'u789',
+    content: 'The P/E ratio is getting high, but growth stocks often trade at premium valuations. Do your own research!',
+    likes: 12,
+    timeAgo: '30 minutes ago',
+  },
+  {
+    id: 'c4',
+    threadId: 2,
+    author: 'FirstTimer',
+    authorId: 'u234',
+    content: 'This is exactly what I needed! I\'ve been confused about P/E ratios. Thank you for breaking it down.',
+    likes: 5,
+    timeAgo: '4 hours ago',
+  },
+  {
+    id: 'c5',
+    threadId: 2,
+    author: 'ExperiencedTrader',
+    authorId: 'u567',
+    content: 'Good explanation! I\'d also add that you should compare P/E ratios within the same industry for meaningful insights.',
+    likes: 15,
+    timeAgo: '3 hours ago',
+  },
+  {
+    id: 'c6',
+    threadId: 4,
+    author: 'IndexFanatic',
+    authorId: 'u890',
+    content: 'For beginners, I always recommend starting with index funds like SPY or VOO. Less risky than picking individual stocks.',
+    likes: 23,
+    timeAgo: '20 hours ago',
+  },
+  {
+    id: 'c7',
+    threadId: 4,
+    author: 'DividendKing',
+    authorId: 'u345',
+    content: 'Index funds are great, but you could also consider dividend aristocrats for steady income.',
+    likes: 11,
+    timeAgo: '18 hours ago',
+  },
+];
+
 export function Forum() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [showNewThreadModal, setShowNewThreadModal] = useState(false);
+  const [expandedThreads, setExpandedThreads] = useState<Set<number>>(new Set());
+  const [comments, setComments] = useState<Comment[]>(mockComments);
+  const [newCommentText, setNewCommentText] = useState<{ [threadId: number]: string }>({});
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportingComment, setReportingComment] = useState<Comment | null>(null);
   const { user } = useAuth();
 
   const filteredThreads = forumThreads.filter(thread => {
@@ -107,6 +188,52 @@ export function Forum() {
     const matchesCategory = selectedCategory === 'All Categories' || thread.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const toggleThread = (threadId: number) => {
+    setExpandedThreads(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(threadId)) {
+        newSet.delete(threadId);
+      } else {
+        newSet.add(threadId);
+      }
+      return newSet;
+    });
+  };
+
+  const getThreadComments = (threadId: number) => {
+    return comments.filter(comment => comment.threadId === threadId);
+  };
+
+  const handlePostComment = (threadId: number) => {
+    const commentText = newCommentText[threadId]?.trim();
+    if (!commentText) return;
+
+    const newComment: Comment = {
+      id: `c${Date.now()}`,
+      threadId,
+      author: user?.name || 'Anonymous',
+      authorId: user?.id || 'unknown',
+      content: commentText,
+      likes: 0,
+      timeAgo: 'Just now',
+    };
+
+    setComments(prev => [...prev, newComment]);
+    setNewCommentText(prev => ({ ...prev, [threadId]: '' }));
+  };
+
+  const handleReportComment = (comment: Comment) => {
+    setReportingComment(comment);
+    setShowReportModal(true);
+  };
+
+  const submitReport = (reason: string) => {
+    console.log('Reporting comment:', reportingComment?.id, 'Reason:', reason);
+    setShowReportModal(false);
+    setReportingComment(null);
+    alert('Comment reported successfully. Our moderators will review it shortly.');
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -200,73 +327,175 @@ export function Forum() {
 
       {/* Thread List */}
       <div className="space-y-4">
-        {filteredThreads.map((thread) => (
-          <div
-            key={thread.id}
-            className={`bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-all cursor-pointer ${
-              thread.isPinned ? 'ring-2 ring-blue-100' : ''
-            }`}
-          >
-            <div className="flex items-start space-x-4">
-              {/* Avatar */}
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold">
-                    {thread.author.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              </div>
+        {filteredThreads.map((thread) => {
+          const isExpanded = expandedThreads.has(thread.id);
+          const threadComments = getThreadComments(thread.id);
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center space-x-2 flex-wrap">
-                    {thread.isPinned && (
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
-                        Pinned
+          return (
+            <div
+              key={thread.id}
+              className={`bg-white rounded-xl border border-gray-200 hover:shadow-md transition-all ${
+                thread.isPinned ? 'ring-2 ring-blue-100' : ''
+              }`}
+            >
+              <div className="p-6">
+                <div className="flex items-start space-x-4">
+                  {/* Avatar */}
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold">
+                        {thread.author.charAt(0).toUpperCase()}
                       </span>
-                    )}
-                    <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                      thread.category === 'EOD Discussion' 
-                        ? 'bg-purple-100 text-purple-700' 
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {thread.category}
-                    </span>
+                    </div>
                   </div>
-                </div>
 
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-blue-600 transition-colors">
-                  {thread.title}
-                </h3>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center space-x-2 flex-wrap">
+                        {thread.isPinned && (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                            Pinned
+                          </span>
+                        )}
+                        <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                          thread.category === 'EOD Discussion'
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {thread.category}
+                        </span>
+                      </div>
+                    </div>
 
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                  {thread.content}
-                </p>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {thread.title}
+                    </h3>
 
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                  <span className="font-medium text-gray-700">{thread.author}</span>
-                  <div className="flex items-center space-x-1">
-                    <Clock className="w-4 h-4" />
-                    <span>{thread.timeAgo}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{thread.replies} replies</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Eye className="w-4 h-4" />
-                    <span>{thread.views} views</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <ThumbsUp className="w-4 h-4" />
-                    <span>{thread.likes} likes</span>
+                    <p className="text-gray-600 text-sm mb-3">
+                      {thread.content}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-3">
+                      <span className="font-medium text-gray-700">{thread.author}</span>
+                      <div className="flex items-center space-x-1">
+                        <Clock className="w-4 h-4" />
+                        <span>{thread.timeAgo}</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <MessageSquare className="w-4 h-4" />
+                        <span>{threadComments.length} replies</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Eye className="w-4 h-4" />
+                        <span>{thread.views} views</span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <ThumbsUp className="w-4 h-4" />
+                        <span>{thread.likes} likes</span>
+                      </div>
+                    </div>
+
+                    {/* View Comments Button */}
+                    <button
+                      onClick={() => toggleThread(thread.id)}
+                      className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    >
+                      {isExpanded ? (
+                        <>
+                          <ChevronUp className="w-4 h-4" />
+                          <span>Hide comments</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-4 h-4" />
+                          <span>View {threadComments.length} {threadComments.length === 1 ? 'comment' : 'comments'}</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
+
+              {/* Comments Section */}
+              {isExpanded && (
+                <div className="border-t border-gray-200 bg-gray-50 p-6">
+                  {/* Existing Comments */}
+                  <div className="space-y-4 mb-4">
+                    {threadComments.length === 0 ? (
+                      <p className="text-gray-500 text-sm text-center py-4">
+                        No comments yet. Be the first to comment!
+                      </p>
+                    ) : (
+                      threadComments.map((comment) => (
+                        <div key={comment.id} className="bg-white rounded-lg p-4 border border-gray-200">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-white text-sm font-semibold">
+                                {comment.author.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium text-gray-900 text-sm">{comment.author}</span>
+                                  <span className="text-gray-500 text-xs">•</span>
+                                  <span className="text-gray-500 text-xs">{comment.timeAgo}</span>
+                                </div>
+                                <button
+                                  onClick={() => handleReportComment(comment)}
+                                  className="text-gray-400 hover:text-red-500 transition-colors"
+                                  title="Report comment"
+                                >
+                                  <Flag className="w-4 h-4" />
+                                </button>
+                              </div>
+                              <p className="text-gray-700 text-sm mb-2">{comment.content}</p>
+                              <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors text-xs">
+                                <ThumbsUp className="w-3 h-3" />
+                                <span>{comment.likes}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Add Comment Form */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-sm font-semibold">
+                          {user?.name?.charAt(0).toUpperCase() || 'A'}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <textarea
+                          value={newCommentText[thread.id] || ''}
+                          onChange={(e) => setNewCommentText(prev => ({ ...prev, [thread.id]: e.target.value }))}
+                          placeholder="Add a comment..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+                          rows={3}
+                        />
+                        <div className="flex items-center justify-end mt-2">
+                          <button
+                            onClick={() => handlePostComment(thread.id)}
+                            disabled={!newCommentText[thread.id]?.trim()}
+                            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                          >
+                            <Send className="w-4 h-4" />
+                            <span>Post Comment</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* New Thread Modal */}
@@ -279,7 +508,7 @@ export function Forum() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category
                 </label>
-                <select className="w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                   {categories.filter(cat => cat !== 'All Categories').map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
@@ -293,7 +522,7 @@ export function Forum() {
                 <input
                   type="text"
                   placeholder="Enter a descriptive title..."
-                  className="w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -304,7 +533,7 @@ export function Forum() {
                 <textarea
                   rows={6}
                   placeholder="Share your thoughts, questions, or insights..."
-                  className="w-full px-4 py-3 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 />
               </div>
 
@@ -324,6 +553,48 @@ export function Forum() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Report Comment Modal */}
+      {showReportModal && reportingComment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Flag className="w-5 h-5 text-red-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Report Comment</h2>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <p className="text-sm text-gray-700">{reportingComment.content}</p>
+              <p className="text-xs text-gray-500 mt-2">by {reportingComment.author}</p>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <p className="text-sm font-medium text-gray-700">Select a reason:</p>
+              {['Spam/Scam', 'Harassment/Bullying', 'Offensive Language', 'Misinformation', 'Other'].map((reason) => (
+                <button
+                  key={reason}
+                  onClick={() => submitReport(reason)}
+                  className="w-full text-left px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                setShowReportModal(false);
+                setReportingComment(null);
+              }}
+              className="w-full px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
