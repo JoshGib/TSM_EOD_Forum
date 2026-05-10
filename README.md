@@ -60,7 +60,7 @@ cd Group-3---Main
     sudo service postgresql start
 
     2. Open PostgreSQL shell
-    sudo -u postgresql psql
+    sudo -u postgres psql
 
     3. Inside shell create the data base and user
     CREATE DATABASE forum_db;

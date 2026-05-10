@@ -1,19 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from db import get_db
-from db import SessionLocal
 from models import User
 from schemas import UserSignup, UserLogin
 from auth import hash_password, verify_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-# def get_db():
 
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
 
 @router.post("/signup")
 def signup(user: UserSignup, db: Session = Depends(get_db)):
@@ -26,7 +19,7 @@ def signup(user: UserSignup, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"status": "ok"}
+    return {"status": "user created successfully"}
 
 @router.post("/login")
 def login(user: UserLogin, db: Session = Depends(get_db)):

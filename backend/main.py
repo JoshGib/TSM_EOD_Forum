@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db import engine, Base
 from routes import auth
+import models
 app = FastAPI()
 
 @app.on_event("startup")
