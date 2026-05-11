@@ -44,18 +44,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     // Demo admin user logic
-    if (email === 'admin@example.com' && password === 'password') {
-      const demoAdminUser: User = {
-        id: 'admin-123',
-        email: 'admin@example.com',
-        name: 'Demo Admin',
-        role: 'admin',
-        isAdmin: true,
-      };
-      setUser(demoAdminUser);
-      localStorage.setItem('user', JSON.stringify(demoAdminUser));
-      return;
-    }
+    // if (email === 'admin@example.com' && password === 'password') {
+    //   const demoAdminUser: User = {
+    //     id: 'admin-123',
+    //     email: 'admin@example.com',
+    //     name: 'Demo Admin',
+    //     role: 'admin',
+    //     isAdmin: true,
+    //   };
+    //   setUser(demoAdminUser);
+    //   localStorage.setItem('user', JSON.stringify(demoAdminUser));
+    //   return;
+    // }
 
     const res = await fetch("http://127.0.0.1:8000/auth/login", {
       method: 'POST',
