@@ -15,7 +15,7 @@ class User(Base):
 
     threads = relationship('Thread', back_populates='owner')
     comments = relationship('Comment', back_populates='owner')
-    bans = relationship('Blacklist', back_populates='user')
+    bans = relationship('Blacklist', foreign_keys='Blacklist.user_id', back_populates='user')
 
 
 # Forum tables
@@ -73,4 +73,4 @@ class Blacklist(Base):
     expires_at = Column(DateTime, nullable=True)
     banned_by_admin = Column(Integer, ForeignKey('users.id'))
 
-    user = relationship('User', back_populates='bans')
+    user = relationship('User', foreign_keys=[user_id], back_populates='bans')
