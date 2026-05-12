@@ -40,6 +40,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
+
+  
+  const signup = async (name: string, email: string, password: string) => {
+    setError(null);
+    const res = await fetch("http://127.0.0.1:8000/auth/signup", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: name, email, password }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.detail || 'Signup failed');
+      return;
+    }
+
+    const userData: User = {
+      id: data.id,
+      email: data.email,
+      name: data.username,
+      role: data.role || 'user',
+    };
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
+  };
+
+
+  
   const login = async (email: string, password: string) => {
     setError(null);
 
@@ -82,29 +110,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  const signup = async (name: string, email: string, password: string) => {
-    setError(null);
-    const res = await fetch("http://127.0.0.1:8000/auth/signup", {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: name, email, password }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.detail || 'Signup failed');
-      return;
-    }
-
-    const userData: User = {
-      id: data.id,
-      email: data.email,
-      name: data.username,
-      role: data.role || 'user',
-    };
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
-  };
 
   const logout = () => {
     setUser(null);

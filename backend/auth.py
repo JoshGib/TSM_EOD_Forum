@@ -32,7 +32,7 @@ def verify_token(token: str):
 
 
 auth_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-def get_current_user(token: str = Depends(OAuth2PasswordBearer)):
+def get_current_user(token: str = Depends(auth_scheme)):
     payload = verify_token(token)
     if payload is None:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")

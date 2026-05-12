@@ -27,7 +27,9 @@ from fastapi.responses import FileResponse, HTMLResponse
 # SQLAlchemy
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
-
+#johana's change, next two lines
+from models import FinancialSummary, SummarySource, SectorPerformance
+from db import get_db
 # Load environment variables from a local .env file if present.
 # In production (e.g. Hugging Face Spaces), env vars come from the
 # platform's secret store, so this is a no-op there.
@@ -60,9 +62,9 @@ SessionLocal = sessionmaker(
     future=True,
 )
 
-# Declarative Base for ORM models.
-Base = declarative_base()
-
+#Johana: lets delete this and just import db
+# Declarative Base for ORM models. 
+#Base = declarative_base()
 
 def get_db():
     """
@@ -82,6 +84,8 @@ def get_db():
         db.close()
 
 app = FastAPI(title="TSM Forum EOD Report Generator")
+#johana: add this to create new tables automatically
+Base.metadata.create_all(bind=engine)   
 
 # Allow localhost:3000 and Hugging Face
 app.add_middleware(
@@ -202,6 +206,44 @@ DROP_COLS = [
     "combined_article_summaries",
 ]
 
+#johana: crete save_summary_to_db function to save the summaries to the database
+
+def save_summary_to_db(df: pd.DataFrame, db: Session):
+    """Save financial summaries and the source urls into the database."""
+    for _, row in df.iterrows():
+        report_date = row["trade_day"].date() 
+
+        existing_summary = db.query(FinancialSummary).filter(FinancialSummary.report_date == report_date).first()
+        if existing_summary:
+            continue
+            
+        summary = FinancialSummary(
+            report_date=str(row["trade_day"].date()),
+            summary_text=row["generated_eod_summary"],
+            market_tone=row["overall_article_tone"]
+        )
+        db.add(summary)
+        db.flush()  # Get the ID of the inserted summary
+
+        urls = str(row.get("url", ""))
+        if urls.startswith("["):
+            try:
+                url_list = ast.literal_eval(urls)
+            except Exception:
+                url_list = [u.strip() for u in urls.split("|") if u.strip()]
+        else:
+            url_list = [u.strip() for u in urls.split("|") if u.strip()]
+
+        for url in url_list:
+            source = SummarySource(
+                summary_id=summary.id,
+                source_name=url.split("/")[2] if "://" in url else url,  
+                source_url=url
+            )
+            db.add(source)
+
+    db.commit()
+
 # Routes
 @app.on_event("startup")
 async def startup():
@@ -217,6 +259,8 @@ async def startup():
         print(f"CSV loaded — columns: {raw_df.columns.tolist()}, rows: {len(raw_df)}")
 
         df = clean_dataframe(raw_df)
+        #johana: save summaries to the database on startup
+        save_summary_to_db(df, db)
         print(f"Cleaned — rows: {len(df)}")
 
         cols_to_drop = [c for c in DROP_COLS if c in df.columns]
@@ -271,7 +315,8 @@ def db_health(db: Session = Depends(get_db)):
         raise HTTPException(status_code=503, detail=f"Database unreachable: {e}")
 
 @app.post("/generate")
-def generate():
+#Johana" add db session dependency and save summaries to the database
+def generate(db: Session = Depends(get_db)):
     """
     Called by the frontend button click.
     1. Reads INPUT_CSV

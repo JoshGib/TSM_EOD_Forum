@@ -64,8 +64,89 @@ class CommentOut(BaseModel):
 
 
 #report schemas
+class ReportingFlagOut(BaseModel):
+    userId: int
+    userName: str
+    reason: str
+    timestamp: datetime
+
+
 class ReportCreate(BaseModel):
     reason: str
     thread_id: Optional[int] = None
     comment_id: Optional[int] = None
     reported_user_id: Optional[int] = None
+
+class ReportOut(BaseModel):
+    id: int
+    reporter_id: int
+    reported_user_id: Optional[int] = None
+    thread_id: Optional[int] = None
+    comment_id: Optional[int] = None
+    status: str
+    priority: str
+    created_at: datetime
+
+    comment_content: Optional[str] = None
+    author_id: Optional[int] = None
+    author_name: Optional[str] = None
+    thread_title: Optional[str] = None
+
+    flags: list[ReportingFlagOut] = []
+    class Config:
+        from_attributes = True
+
+
+    class Config:
+        from_attributes = True
+
+#Admin schemas
+class AdminReportOut(BaseModel):
+    report_id: int
+    comment_id: int
+    comment_content: str
+    author_id: int
+    author_name: str
+    thread_title: str
+    reason: str
+    status: str
+    created_at: datetime
+    class Config:
+        from_attributes = True
+#Financial summary schemas
+class SummarySourceCreate(BaseModel):
+    source_name: str
+    source_url: str
+
+class SummarySourceOut(BaseModel):
+    id: int
+    source_name: str
+    source_url: str
+
+    class Config:
+        from_attributes = True
+
+class SectorPerformanceOut(BaseModel):
+    id: int
+    sector_name: str
+    performance_percentage: str
+    is_positive: bool 
+    class Config:
+        from_attributes = True
+
+class FinancialSummaryCreate(BaseModel):
+    report_date: str
+    summary_text: str
+    market_tone: str
+
+class FinancialSummaryOut(BaseModel):
+    id: int
+    report_date: str
+    summary_text: str
+    market_tone: str
+    created_at: datetime
+    sources: list[SummarySourceOut] = []
+    sectors: list[SectorPerformanceOut] = []
+
+    class Config:
+        from_attributes = True

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminRoute } from '../components/ProtectedRoute';
-import { Shield, ChevronDown, ChevronUp, Trash2, Ban, AlertTriangle } from 'lucide-react';
+import { Shield, ChevronDown, ChevronUp, Trash2, Ban, AlertTriangle, UserRoundIcon } from 'lucide-react';
 
 interface FlagReason {
   userId: string;
@@ -12,93 +12,140 @@ interface FlagReason {
 }
 
 interface ReportedComment {
-  id: string;
-  commentId: string;
+  id: number;
+  commentId: number;
   content: string;
   author: string;
-  authorId: string;
+  authorId: number;
   threadTitle: string;
   flags: FlagReason[];
   createdAt: string;
 }
 
-const mockReportedComments: ReportedComment[] = [
-  {
-    id: '1',
-    commentId: 'c123',
-    content: 'This is complete garbage advice. Anyone who follows this will lose all their money. You\'re all idiots.',
-    author: 'aggressive_trader',
-    authorId: 'u456',
-    threadTitle: 'EOD Report - April 25, 2026: Tech Sector Rally',
-    flags: [
-      {
-        userId: 'u789',
-        userName: 'john_doe',
-        reason: 'Harassment/Bullying',
-        timestamp: '2026-04-26T10:30:00Z',
-      },
-      {
-        userId: 'u012',
-        userName: 'jane_smith',
-        reason: 'Offensive Language',
-        timestamp: '2026-04-26T11:15:00Z',
-      },
-      {
-        userId: 'u345',
-        userName: 'mike_jones',
-        reason: 'Harassment/Bullying',
-        timestamp: '2026-04-26T12:45:00Z',
-      },
-    ],
-    createdAt: '2026-04-26T09:00:00Z',
-  },
-  {
-    id: '2',
-    commentId: 'c456',
-    content: 'GUARANTEED 1000% RETURNS! Click here to join my exclusive trading group. Limited spots available!',
-    author: 'quick_profits',
-    authorId: 'u678',
-    threadTitle: 'Q&A: How to Start Investing',
-    flags: [
-      {
-        userId: 'u901',
-        userName: 'sarah_williams',
-        reason: 'Spam/Scam',
-        timestamp: '2026-04-25T16:20:00Z',
-      },
-      {
-        userId: 'u234',
-        userName: 'david_brown',
-        reason: 'Spam/Scam',
-        timestamp: '2026-04-25T17:00:00Z',
-      },
-    ],
-    createdAt: '2026-04-25T15:00:00Z',
-  },
-  {
-    id: '3',
-    commentId: 'c789',
-    content: 'I think the market might go up or down tomorrow based on the Fed announcement.',
-    author: 'market_watcher',
-    authorId: 'u567',
-    threadTitle: 'EOD Report - April 24, 2026: Federal Reserve Decision',
-    flags: [
-      {
-        userId: 'u890',
-        userName: 'chris_lee',
-        reason: 'Misinformation',
-        timestamp: '2026-04-24T14:30:00Z',
-      },
-    ],
-    createdAt: '2026-04-24T13:00:00Z',
-  },
-];
+// const mockReportedComments: ReportedComment[] = [
+//   {
+//     id: '1',
+//     commentId: 'c123',
+//     content: 'This is complete garbage advice. Anyone who follows this will lose all their money. You\'re all idiots.',
+//     author: 'aggressive_trader',
+//     authorId: 'u456',
+//     threadTitle: 'EOD Report - April 25, 2026: Tech Sector Rally',
+//     flags: [
+//       {
+//         userId: 'u789',
+//         userName: 'john_doe',
+//         reason: 'Harassment/Bullying',
+//         timestamp: '2026-04-26T10:30:00Z',
+//       },
+//       {
+//         userId: 'u012',
+//         userName: 'jane_smith',
+//         reason: 'Offensive Language',
+//         timestamp: '2026-04-26T11:15:00Z',
+//       },
+//       {
+//         userId: 'u345',
+//         userName: 'mike_jones',
+//         reason: 'Harassment/Bullying',
+//         timestamp: '2026-04-26T12:45:00Z',
+//       },
+//     ],
+//     createdAt: '2026-04-26T09:00:00Z',
+//   },
+//   {
+//     id: '2',
+//     commentId: 'c456',
+//     content: 'GUARANTEED 1000% RETURNS! Click here to join my exclusive trading group. Limited spots available!',
+//     author: 'quick_profits',
+//     authorId: 'u678',
+//     threadTitle: 'Q&A: How to Start Investing',
+//     flags: [
+//       {
+//         userId: 'u901',
+//         userName: 'sarah_williams',
+//         reason: 'Spam/Scam',
+//         timestamp: '2026-04-25T16:20:00Z',
+//       },
+//       {
+//         userId: 'u234',
+//         userName: 'david_brown',
+//         reason: 'Spam/Scam',
+//         timestamp: '2026-04-25T17:00:00Z',
+//       },
+//     ],
+//     createdAt: '2026-04-25T15:00:00Z',
+//   },
+//   {
+//     id: '3',
+//     commentId: 'c789',
+//     content: 'I think the market might go up or down tomorrow based on the Fed announcement.',
+//     author: 'market_watcher',
+//     authorId: 'u567',
+//     threadTitle: 'EOD Report - April 24, 2026: Federal Reserve Decision',
+//     flags: [
+//       {
+//         userId: 'u890',
+//         userName: 'chris_lee',
+//         reason: 'Misinformation',
+//         timestamp: '2026-04-24T14:30:00Z',
+//       },
+//     ],
+//     createdAt: '2026-04-24T13:00:00Z',
+//   },
+// ];
 
 function AdminPageContent() {
-  const [reports, setReports] = useState<ReportedComment[]>(mockReportedComments);
-  const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set());
+  const [reports, setReports] = useState<ReportedComment[]>([]);
+  const [expandedReports, setExpandedReports] = useState<Set<number>>(new Set());
 
-  const toggleExpanded = (reportId: string) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('Token');
+      const res = await fetch(
+        "http://127.0.0.1:8000/admin/reports",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch reports');
+      }
+
+      const data = await res.json();
+      const formatted: ReportedComment[] = data.map((item: any) => ({
+        id: item.id,
+        commentId: item.comment_id,
+        content: item.content,
+        author: item.author_name,
+        authorId: item.author_id,
+        threadTitle: item.thread_title,
+        createdAt: item.created_at,
+        flags: (item.flags || []).map((flag: any) => ({
+          userId: flag.user_id,
+          userName: flag.user_name,
+          reason: flag.reason,
+          timestamp: flag.timestamp,
+        })),
+      }));
+      setReports(formatted);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'An error occurred while fetching reports');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {fetchReports()}, []);
+
+  const toggleExpanded = (reportId: number) => {
     setExpandedReports(prev => {
       const newSet = new Set(prev);
       if (newSet.has(reportId)) {
@@ -107,26 +154,50 @@ function AdminPageContent() {
         newSet.add(reportId);
       }
       return newSet;
-    });
+    }
+    );
   };
 
-  const handleDeleteComment = (reportId: string, commentId: string) => {
-    if (window.confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
-      setReports(prev => prev.filter(report => report.id !== reportId));
-      console.log(`Deleted comment: ${commentId}`);
+  const handleDeleteComment = async (reportId: number, commentId: number) => {
+    if(!commentId)
+      return;
+    if (confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
+      await fetch(`http://127.0.0.1:8000/admin/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('Token')}`,
+          
+        },
+        
+      });
+      fetchReports();
     }
   };
 
-  const handleBlacklistUser = (reportId: string, userId: string, userName: string) => {
+  const handleBlacklistUser = async (reportId: number, userId: number, userName: string) => {
     if (window.confirm(`Are you sure you want to blacklist user "${userName}"? They will no longer be able to post.`)) {
+      await fetch(`http://127.0.0.1:8000/admin/blacklist/${userId}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('Token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ user_id: userId, reason: 'User blacklisted by admin' }),
+      });
       setReports(prev => prev.filter(report => report.id !== reportId));
       console.log(`Blacklisted user: ${userId}`);
     }
   };
 
-  const handleDismiss = (reportId: string) => {
-    if (window.confirm('Are you sure you want to dismiss this report?')) {
-      setReports(prev => prev.filter(report => report.id !== reportId));
+  const handleDismiss = async (reportId: number) => {
+    if (confirm('Are you sure you want to dismiss this report?')) {
+      await fetch(`http://127.0.0.1:8000/admin/reports/${reportId}/dismiss`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('Token')}`,
+        },
+      });
+      fetchReports();
     }
   };
 

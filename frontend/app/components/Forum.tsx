@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles, Send, Flag, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
+
 interface Comment {
-  id: string;
+  id: number;
   threadId: number;
   author: string;
-  authorId: string;
   content: string;
   likes: number;
   timeAgo: string;
@@ -25,76 +25,21 @@ interface Thread {
   isPinned?: boolean;
 }
 
-const forumThreads: Thread[] = [
-  {
-    id: 1,
-    title: 'Feb 25 EOD: Tech Rally Discussion - What drove NVIDIA\'s gains?',
-    author: 'InvestorMike',
-    category: 'EOD Discussion',
-    content: 'Based on today\'s EOD report showing NVIDIA up 8.67%, what factors contributed to this rally? Let\'s discuss the implications.',
-    replies: 24,
-    views: 342,
-    likes: 15,
-    timeAgo: '2 hours ago',
-    isPinned: true,
-  },
-  {
-    id: 2,
-    title: 'Understanding P/E Ratios - A Simple Explanation for Beginners',
-    author: 'FinanceGuru',
-    category: 'Education',
-    content: 'Let me break down what P/E ratios mean and how to use them when evaluating stocks. Perfect for first-time investors...',
-    replies: 18,
-    views: 567,
-    likes: 42,
-    timeAgo: '5 hours ago',
-    isPinned: true,
-  },
-  {
-    id: 3,
-    title: 'Energy Sector Weakness - Analysis from Today\'s Report',
-    author: 'MarketWatcher',
-    category: 'EOD Discussion',
-    content: 'The EOD report shows energy sector down 0.34%. Let\'s discuss crude oil concerns and what this means for energy stocks.',
-    replies: 31,
-    views: 789,
-    likes: 23,
-    timeAgo: '8 hours ago',
-  },
-  {
-    id: 4,
-    title: 'Getting Started: What should I invest in as a beginner?',
-    author: 'NewbieTom',
-    category: 'Beginner Questions',
-    content: 'I just opened my first brokerage account and have $1000 to start. Should I go with index funds or individual stocks?',
-    replies: 45,
-    views: 1234,
-    likes: 67,
-    timeAgo: '1 day ago',
-  },
-  {
-    id: 5,
-    title: 'How to interpret the VIX (Volatility Index)?',
-    author: 'LearningDaily',
-    category: 'Beginner Questions',
-    content: 'Can someone explain what the VIX means and how I should use it to understand market sentiment?',
-    replies: 12,
-    views: 234,
-    likes: 8,
-    timeAgo: '1 day ago',
-  },
-  {
-    id: 6,
-    title: 'Dollar-Cost Averaging Strategy for New Investors',
-    author: 'DividendDave',
-    category: 'Strategies',
-    content: 'Here\'s my approach to building a portfolio gradually through dollar-cost averaging, perfect for beginners...',
-    replies: 27,
-    views: 445,
-    likes: 19,
-    timeAgo: '2 days ago',
-  },
-];
+export function Forum() {
+  const { user } = useAuth();
+
+  const [forumThreads, setForumThreads] = useState<Thread[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [expandedThreads, setExpandedThreads] = useState<Set<number>>(new Set());
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [newCommentText, setNewCommentText] = useState<{ [key: number]: string }>({});
+
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportingComment, setReportingComment] = useState<Comment | null>(null);
+
+  const [showNewThreadModal, setShowNewThreadModal] = useState(false);
 
 const categories = [
   'All Categories',
@@ -105,135 +50,135 @@ const categories = [
   'Strategies',
 ];
 
-const mockComments: Comment[] = [
-  {
-    id: 'c1',
-    threadId: 1,
-    author: 'TechInvestor99',
-    authorId: 'u123',
-    content: 'Great analysis! I think the AI chip demand is really driving this. NVIDIA\'s data center revenue has been incredible.',
-    likes: 8,
-    timeAgo: '1 hour ago',
-  },
-  {
-    id: 'c2',
-    threadId: 1,
-    author: 'MarketNewbie',
-    authorId: 'u456',
-    content: 'As a beginner, should I be buying NVIDIA at these levels or wait for a pullback?',
-    likes: 3,
-    timeAgo: '45 minutes ago',
-  },
-  {
-    id: 'c3',
-    threadId: 1,
-    author: 'ValueHunter',
-    authorId: 'u789',
-    content: 'The P/E ratio is getting high, but growth stocks often trade at premium valuations. Do your own research!',
-    likes: 12,
-    timeAgo: '30 minutes ago',
-  },
-  {
-    id: 'c4',
-    threadId: 2,
-    author: 'FirstTimer',
-    authorId: 'u234',
-    content: 'This is exactly what I needed! I\'ve been confused about P/E ratios. Thank you for breaking it down.',
-    likes: 5,
-    timeAgo: '4 hours ago',
-  },
-  {
-    id: 'c5',
-    threadId: 2,
-    author: 'ExperiencedTrader',
-    authorId: 'u567',
-    content: 'Good explanation! I\'d also add that you should compare P/E ratios within the same industry for meaningful insights.',
-    likes: 15,
-    timeAgo: '3 hours ago',
-  },
-  {
-    id: 'c6',
-    threadId: 4,
-    author: 'IndexFanatic',
-    authorId: 'u890',
-    content: 'For beginners, I always recommend starting with index funds like SPY or VOO. Less risky than picking individual stocks.',
-    likes: 23,
-    timeAgo: '20 hours ago',
-  },
-  {
-    id: 'c7',
-    threadId: 4,
-    author: 'DividendKing',
-    authorId: 'u345',
-    content: 'Index funds are great, but you could also consider dividend aristocrats for steady income.',
-    likes: 11,
-    timeAgo: '18 hours ago',
-  },
-];
+const fetchThreads = async () => {
+  try {
+    const response = await fetch('http://localhost:8000/threads/');
+    if (!response.ok) {
+      throw new Error('Failed to fetch threads');
+    }
+    const data = await response.json();
+    console.log("Thread data:", data);
+    
+    const formattedThreads = data.map((thread: any) => ({
+      id: thread.id,
+      title: thread.title,
+      author: thread.author_username || 'Unknown',
+      category: thread.category,
+      content: thread.content,
+      replies: thread.replies_count ?? 0,
+      views: thread.views ?? 0,
+      likes: thread.likes_count ?? 0,
+      timeAgo: 'Just now',
+      isPinned:false,
+    }));
 
-export function Forum() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
-  const [showNewThreadModal, setShowNewThreadModal] = useState(false);
-  const [expandedThreads, setExpandedThreads] = useState<Set<number>>(new Set());
-  const [comments, setComments] = useState<Comment[]>(mockComments);
-  const [newCommentText, setNewCommentText] = useState<{ [threadId: number]: string }>({});
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [reportingComment, setReportingComment] = useState<Comment | null>(null);
-  const { user } = useAuth();
+    setForumThreads(formattedThreads);
+  } catch (error) {
+    console.error('Error fetching threads:', error);
+  }
+};
 
-  const filteredThreads = forumThreads.filter(thread => {
-    const matchesSearch = thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         thread.content.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All Categories' || thread.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+const fetchComments = async (threadId: number) => {
+  try {
+    const response = await fetch('http://localhost:8000/comments/thread/${threadId}');
+    const data = await response.json();
+
+    const formattedComments = data.map((c: any) => ({
+      id: c.id,
+      threadId: c.thread_id,
+      userId: c.user_id,
+      author: c.author_username || 'Unknown',
+      content: c.content,
+      likes: c.likes || 0,
+      timeAgo: 'Just now',
+    }));
+
+    setComments(prev =>{
+      const filteredComments = prev.filter(c => c.threadId !== threadId);
+      return [...filteredComments, ...formattedComments];
+    });
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+  }
+};
+
+useEffect(() => {
+  fetchThreads();
+}, []);
+
+const toggleThread = async (threadId: number) => { 
+  setExpandedThreads(prev => {
+  const newSet = new Set(expandedThreads);
+  if (newSet.has(threadId)) {
+    newSet.delete(threadId);
+  }else {
+    newSet.add(threadId);
+    fetchComments(threadId);
+    
+  }
+  return newSet;
+});
+
+};
+
+const getThreadComments = (threadId: number) => {
+  return comments.filter(c => c.threadId === threadId);
+}
+
+const handlePostComment = async (threadId: number) => {
+  const content = newCommentText[threadId]?.trim();
+  if (!content || !user) return
+  try {
+    await fetch('http://localhost:8000/comments/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        thread_id: threadId,
+        content,
+      }),
   });
 
-  const toggleThread = (threadId: number) => {
-    setExpandedThreads(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(threadId)) {
-        newSet.delete(threadId);
-      } else {
-        newSet.add(threadId);
-      }
-      return newSet;
+  setNewCommentText(prev => ({ ...prev, [threadId]: '' }));
+  await fetchComments(threadId);
+}   catch (error) {
+    console.error('Error posting comment:', error);
+  }
+}
+
+const handleReportComment = (comment: Comment) => {
+  setReportingComment(comment);
+  setShowReportModal(true);
+};
+
+const submitReport = async (reason: string) => {
+  if (!reportingComment) return;
+  try {
+    await fetch('http://localhost:8000/reports/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        comment_id: reportingComment.id,
+        reason,
+      }),
     });
-  };
+  } catch (error) {
+    console.error('Error submitting report:', error);
+  }
+};
 
-  const getThreadComments = (threadId: number) => {
-    return comments.filter(comment => comment.threadId === threadId);
-  };
+const filteredThreads = forumThreads.filter(t => {
+  const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) || t.content.toLowerCase().includes(searchQuery.toLowerCase());
+  const matchesCategory = selectedCategory === 'All Categories' || t.category === selectedCategory;
+  return matchesSearch && matchesCategory;
 
-  const handlePostComment = (threadId: number) => {
-    const commentText = newCommentText[threadId]?.trim();
-    if (!commentText) return;
+});
 
-    const newComment: Comment = {
-      id: `c${Date.now()}`,
-      threadId,
-      author: user?.name || 'Anonymous',
-      authorId: user?.id || 'unknown',
-      content: commentText,
-      likes: 0,
-      timeAgo: 'Just now',
-    };
 
-    setComments(prev => [...prev, newComment]);
-    setNewCommentText(prev => ({ ...prev, [threadId]: '' }));
-  };
-
-  const handleReportComment = (comment: Comment) => {
-    setReportingComment(comment);
-    setShowReportModal(true);
-  };
-
-  const submitReport = (reason: string) => {
-    console.log('Reporting comment:', reportingComment?.id, 'Reason:', reason);
-    setShowReportModal(false);
-    setReportingComment(null);
-    alert('Comment reported successfully. Our moderators will review it shortly.');
-  };
+    
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

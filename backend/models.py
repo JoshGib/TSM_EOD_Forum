@@ -16,7 +16,7 @@ class User(Base):
     threads = relationship('Thread', back_populates='owner')
     comments = relationship('Comment', back_populates='owner')
     bans = relationship('Blacklist', foreign_keys='Blacklist.user_id', back_populates='user')
-
+    admin_bans = relationship('Blacklist', foreign_keys='Blacklist.banned_by_admin')
 
 # Forum tables
 class Thread(Base):
@@ -50,19 +50,25 @@ class Comment(Base):
 
     owner = relationship('User', back_populates='comments')
     thread = relationship('Thread', back_populates='comments')
-
+    replies = relationship('Comment', remote_side=[id])
 
 class Report(Base):
     __tablename__ = 'reports'
     id = Column(Integer, primary_key=True, index=True)
-    reason = Column(Text, nullable=False)
-    status = Column(String, default='pending', nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
     reporter_id = Column(Integer, ForeignKey('users.id'))
     reported_user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     thread_id = Column(Integer, ForeignKey('threads.id'), nullable=True)
     comment_id = Column(Integer, ForeignKey('comments.id'), nullable=True)
+    status = Column(String, default='pending', nullable=False)
+    priority = Column(String, default='low')
+    created_at = Column(DateTime, default=datetime.utcnow)
 
+
+    reporter = relationship('User', foreign_keys=[reporter_id])
+    reported_user = relationship('User', foreign_keys=[reported_user_id])
+    thread = relationship("Thread", foreign_keys=[thread_id])
+    comment = relationship("Comment", foreign_keys=[comment_id])
+    flags = relationship('ReportingFlag', back_populates='report', cascade='all, delete')
 class Blacklist(Base):
     __tablename__ = 'blacklist'
     id = Column(Integer, primary_key=True, index=True)
@@ -74,3 +80,48 @@ class Blacklist(Base):
     banned_by_admin = Column(Integer, ForeignKey('users.id'))
 
     user = relationship('User', foreign_keys=[user_id], back_populates='bans')
+    admin = relationship('User', foreign_keys=[banned_by_admin])
+
+class ReportingFlag(Base):
+    __tablename__ = 'reporting_flags'
+    id = Column(Integer, primary_key=True, index=True)
+    report_id = Column(Integer, ForeignKey('reports.id'))
+    user_id = Column(Integer, ForeignKey('users.id'))
+    reason = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    report = relationship('Report', back_populates='flags')
+    user = relationship('User')
+    
+
+
+#Financial summary tables
+
+class FinancialSummary(Base):
+    __tablename__ = 'financial_summaries'
+    id = Column(Integer, primary_key=True, index=True)
+    report_date = Column(String, unique=True, nullable=False)
+    summary_text = Column(Text, nullable=False)
+    market_tone = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    sources = relationship('SummarySource', back_populates='summary', cascade='all, delete')
+    sectors = relationship('SectorPerformance', back_populates='summary', cascade='all, delete')    
+
+class SummarySource(Base):
+    __tablename__ = 'summary_sources'
+    id = Column(Integer, primary_key=True, index=True)
+    summary_id = Column(Integer, ForeignKey('financial_summaries.id'))
+    source_name = Column(String, nullable=False)
+    source_url = Column(String, nullable=False)
+
+    summary = relationship('FinancialSummary', back_populates='sources')
+
+class SectorPerformance(Base):
+    __tablename__ = 'sector_performance'
+    id = Column(Integer, primary_key=True, index=True)
+    summary_id = Column(Integer, ForeignKey('financial_summaries.id'))
+    sector_name = Column(String, nullable=False)
+    is_positive = Column(Boolean, nullable=False)
+
+    summary = relationship('FinancialSummary', back_populates='sectors')
