@@ -86,23 +86,20 @@ train_df = train_df.groupby("sector", as_index=False).head(30).reset_index(drop=
 
 
 def summarize_articles(texts, batch_size=5):
-    valid_idx = [i for i, t in enumerate(texts) if t]
-    valid_texts = [texts[i] for i in valid_idx]
 
-    outputs = [""] * len(texts)
+    results = article_summarizer(
+        texts,
+        max_length=120,
+        min_length=40,
+        do_sample=False,
+        batch_size=batch_size,
+        truncation=True
+    )
 
-    if valid_texts:
-        results = article_summarizer(
-            valid_texts,
-            max_length=120,
-            min_length=40,
-            do_sample=False,
-            batch_size=batch_size,
-            truncation=True
-        )
-
-        for i, r in zip(valid_idx, results):
-            outputs[i] = r.get("summary_text", "").strip()
+    outputs = [
+        r.get("summary_text", "").strip()
+        for r in results
+    ]
 
     return outputs
 
