@@ -35,10 +35,8 @@
     - train_article_details.csv
         Contains article-level summaries, sentiment labels, scores, and signals
     - train_daily_summaries.csv
-        Contains the generated end-of-day summaries and overall sentiment metrics
-    - train_reports.txt
-        Contains a text report of all generated daily summaries (for display and reading)
-    - test_original_texts.csv
+        Contains the generated eod summaries and overall sentiment metrics
+        - test_original_texts.csv
         Contains original article text grouped by trade day for testing
 
     The output is meant to be used as training data for a model that can summarize
