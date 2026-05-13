@@ -50,7 +50,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 from transformers import pipeline
 from transformers.utils import logging
-from transformers import AutoTokenizer
+
 
 # Settings
 INPUT_CSV = "filtered_articles.csv"
@@ -64,7 +64,6 @@ TEST_DAYS_COUNT = 55
 
 TRAIN_DAILY_OUTPUT = "train_daily_summaries.csv"
 TRAIN_ARTICLE_OUTPUT = "train_article_details.csv"
-TRAIN_REPORT_OUTPUT = "train_reports.txt"
 TEST_OUTPUT = "test_original_texts.csv"
 
 logging.disable_progress_bar()
@@ -304,13 +303,4 @@ for i, trade_day in enumerate(tqdm(train_days), start=1):
 pd.concat(train_article_rows).to_csv(TRAIN_ARTICLE_OUTPUT, index=False)
 pd.DataFrame(train_daily_rows).to_csv(TRAIN_DAILY_OUTPUT, index=False)
 
-with open(TRAIN_REPORT_OUTPUT, "w", encoding="utf-8") as f:
-    for row in train_daily_rows:
-        f.write(f"{row['trade_day']}\n")
-        f.write(row["generated_eod_summary"] + "\n\n")
 
-print("\nSaved files:")
-print(TRAIN_ARTICLE_OUTPUT)
-print(TRAIN_DAILY_OUTPUT)
-print(TRAIN_REPORT_OUTPUT)
-print(TEST_OUTPUT)
