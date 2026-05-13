@@ -103,26 +103,21 @@ def select_top_k_articles(day_df):
 
 def batch_summarize_articles(texts, batch_size=8):
 
-    valid_idx = [i for i, t in enumerate(texts) if t]
-    valid_texts = [texts[i] for i in valid_idx]
+    results = article_summarizer(
+        texts,
+        max_length=90,
+        min_length=50,
+        do_sample=False,
+        batch_size=batch_size,
+        truncation=True
+    )
 
-    outputs = [""] * len(texts)
-
-    if valid_texts:
-        results = article_summarizer(
-            valid_texts,
-            max_length=90,
-            min_length=50,
-            do_sample=False,
-            batch_size=batch_size,
-            truncation=True
-        )
-
-        for i, r in zip(valid_idx, results):
-            outputs[i] = r.get("summary_text", "").strip()
+    outputs = [
+        r.get("summary_text", "").strip()
+        for r in results
+    ]
 
     return outputs
-
 
 def batch_get_sentiment(texts, batch_size=10):
     outputs = [(None, None)] * len(texts)
