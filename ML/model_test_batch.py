@@ -35,7 +35,6 @@ long_summarizer = pipeline(
     truncation=True,
 )
 
-long_summarizer.tokenizer.model_max_length = 1024
 
 # Helper functions
 

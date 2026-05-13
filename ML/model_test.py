@@ -33,16 +33,14 @@ long_summarizer = pipeline(
     model=LONG_SUMMARIZER_MODEL,
     tokenizer=LONG_SUMMARIZER_MODEL,
     device=-1,
-    truncation=True,
-    max_length=1024
+    truncation=True
 )
 
 sentiment_model = pipeline(
     "sentiment-analysis",
     model=SENTIMENT_MODEL,
     device=-1,
-    truncation=True,
-    max_length=512
+    truncation=True
 )
 # Helper functions
 
