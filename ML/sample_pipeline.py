@@ -134,8 +134,7 @@ def batch_get_sentiment(texts, batch_size=10):
 
         results = sentiment_model(
             batch_texts,
-            truncation=True,   
-            max_length=512
+            truncation=True
         )
 
         for i, r in enumerate(results):
