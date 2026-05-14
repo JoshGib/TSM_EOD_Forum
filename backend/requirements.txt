@@ -1,0 +1,26 @@
+# Web Server & API Framework
+transformers==4.40.2
+sentencepiece==0.1.99
+protobuf==4.25.3
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9
+torch
+bcrypt
+
+# Machine Learning & NLP
+# Support for Pegasus-X, FinBERT, and BART
+transformers
+torch
+pandas>=2.1
+pyarrow
+scikit-learn
+tqdm
+
+# Database
+# For Python to talk to PostgreSQL database
+sqlalchemy>=2.0
+psycopg2-binary>=2.9
+
+# Utilities
+python-dotenv
