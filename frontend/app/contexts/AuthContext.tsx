@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const signup = async (name: string, email: string, password: string) => {
     setError(null);
-    const res = await fetch("http://127.0.0.1:8000/auth/signup", {
+    const res = await fetch(`${API_URL}/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: name, email, password }),
@@ -85,8 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     //   localStorage.setItem('user', JSON.stringify(demoAdminUser));
     //   return;
     // }
-
-    const res = await fetch("http://127.0.0.1:8000/auth/login", {
+    
+    const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
