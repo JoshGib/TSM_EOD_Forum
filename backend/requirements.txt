@@ -7,6 +7,9 @@ sqlalchemy>=2.0
 psycopg2-binary>=2.9
 python-dotenv
 email-validator
+pydantic[email]
+passlib[bcrypt]
+python-jose[cryptography]
 
 # Machine Learning & NLP
 # Support for Pegasus-X, FinBERT, and BART
