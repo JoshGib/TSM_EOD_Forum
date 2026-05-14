@@ -29,7 +29,6 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 #johana's change, next two lines
 from models import FinancialSummary, SummarySource, SectorPerformance
-from db import get_db
 # Load environment variables from a local .env file if present.
 # In production (e.g. Hugging Face Spaces), env vars come from the
 # platform's secret store, so this is a no-op there.
@@ -64,7 +63,7 @@ SessionLocal = sessionmaker(
 
 #Johana: lets delete this and just import db
 # Declarative Base for ORM models. 
-#Base = declarative_base()
+Base = declarative_base()
 
 def get_db():
     """
@@ -220,7 +219,7 @@ def save_summary_to_db(df: pd.DataFrame, db: Session):
         summary = FinancialSummary(
             report_date=str(row["trade_day"].date()),
             summary_text=row["generated_eod_summary"],
-            market_tone=row["overall_article_tone"]
+            market_tone=row["overall_article_signal"]
         )
         db.add(summary)
         db.flush()  # Get the ID of the inserted summary
