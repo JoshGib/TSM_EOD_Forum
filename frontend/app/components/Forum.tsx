@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles, Send, Flag, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles, Send, Flag, ChevronDown, ChevronUp, ThumbsDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 
@@ -9,6 +9,7 @@ interface Comment {
   author: string;
   content: string;
   likes: number;
+  dislikes: number;
   timeAgo: string;
 }
 
@@ -21,6 +22,7 @@ interface Thread {
   replies: number;
   views: number;
   likes: number;
+  dislikes: number;
   timeAgo: string;
   isPinned?: boolean;
 }
@@ -72,6 +74,7 @@ const fetchThreads = async () => {
       replies: thread.replies_count ?? 0,
       views: thread.views ?? 0,
       likes: thread.likes_count ?? 0,
+      dislikes: thread.dislikes_count ?? 0,
       timeAgo: 'Just now',
       isPinned:false,
     }));
@@ -84,7 +87,7 @@ const fetchThreads = async () => {
 
 const fetchComments = async (threadId: number) => {
   try {
-    const response = await fetch('http://localhost:8000/comments/thread/${threadId}');
+    const response = await fetch(`http://localhost:8000/comments/thread/${threadId}`);
     const data = await response.json();
 
     const formattedComments = data.map((c: any) => ({
@@ -94,6 +97,7 @@ const fetchComments = async (threadId: number) => {
       author: c.author_username || 'Unknown',
       content: c.content,
       likes: c.likes || 0,
+      dislikes: c.dislikes || 0,
       timeAgo: 'Just now',
     }));
 
@@ -387,6 +391,10 @@ const filteredThreads = forumThreads.filter(t => {
                         <ThumbsUp className="w-4 h-4" />
                         <span>{thread.likes} likes</span>
                       </div>
+                      <div className="flex items-center space-x-1">
+                        <ThumbsDown className="w-4 h-4" />
+                        <span>{thread.dislikes} dislikes</span>
+                      </div>
                     </div>
 
                     {/* View Comments Button */}
@@ -448,6 +456,10 @@ const filteredThreads = forumThreads.filter(t => {
                                 <ThumbsUp className="w-3 h-3" />
                                 <span>{comment.likes}</span>
                               </button>
+                              <button className="flex items-center space-x-1 text-gray-500 hover:text-red-600 transition-colors text-xs ml-4">
+                                <ThumbsDown className="w-3 h-3" />
+                                <span>{comment.dislikes}</span>
+                                </button>
                             </div>
                           </div>
                         </div>

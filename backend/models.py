@@ -14,7 +14,7 @@ class User(Base):
     role = Column(String, default='user', nullable=False)  
 
     threads = relationship('Thread', back_populates='owner')
-    comments = relationship('Comment', back_populates='owner')
+    comments = relationship('Comment', back_populates='user')
     bans = relationship('Blacklist', foreign_keys='Blacklist.user_id', back_populates='user')
     admin_bans = relationship('Blacklist', foreign_keys='Blacklist.banned_by_admin')
 
@@ -27,12 +27,13 @@ class Thread(Base):
     content = Column(Text, nullable=False)
     views = Column(Integer, default=0)
     likes_count = Column(Integer, default=0)
+    dislikes_count = Column(Integer, default=0)
     is_pinned = Column(Boolean, default=False)
     is_locked = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user_id = Column(Integer, ForeignKey('users.id'))
-   
+    
     owner = relationship('User', back_populates='threads')
     comments = relationship('Comment', back_populates='thread')
 
@@ -41,6 +42,7 @@ class Comment(Base):
     id = Column(Integer, primary_key=True, index=True)
     content = Column(Text, nullable=False)
     likes_count = Column(Integer, default=0)
+    dislikes_count = Column(Integer, default=0)
     is_deleted = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -48,7 +50,7 @@ class Comment(Base):
     user_id = Column(Integer, ForeignKey('users.id'))
     parent_comment_id = Column(Integer, ForeignKey('comments.id'), nullable=True)
 
-    owner = relationship('User', back_populates='comments')
+    user = relationship('User', back_populates='comments')
     thread = relationship('Thread', back_populates='comments')
     replies = relationship('Comment', remote_side=[id])
 

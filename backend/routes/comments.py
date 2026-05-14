@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
 from db import get_db
 from models import Comment, User, Thread
 from schemas import CommentCreate, CommentOut
@@ -36,7 +35,16 @@ def create_comment(comment: CommentCreate, db: Session = Depends(get_db), curren
     db.add(new_comment)
     db.commit()
     db.refresh(new_comment)
-    return new_comment
+    return {
+        "id": new_comment.id,
+        "content": new_comment.content,
+        "thread_id": new_comment.thread_id,
+        "parent_comment_id": new_comment.parent_comment_id,
+        "created_at": new_comment.created_at,
+        "user_id": new_comment.user_id,
+        "username": db_user.username,
+        "replies": []
+    }
 
 #get comments for a thread
 @router.get("/thread/{thread_id}", response_model=list[CommentOut])
@@ -44,8 +52,20 @@ def get_comments_for_thread(thread_id: int, db: Session = Depends(get_db)):
     thread = db.query(Thread).filter(Thread.id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
-    comments = db.query(Comment).filter(Comment.thread_id == thread_id).all()
-    return comments
+    comments = db.query(Comment).filter(Comment.thread_id == thread_id).order_by(Comment.created_at.desc()).all()
+    result = []
+    for comment in comments:
+        result.append({
+            "id": comment.id,
+            "content": comment.content,
+            "thread_id": comment.thread_id,
+            "parent_comment_id": comment.parent_comment_id,
+            "created_at": comment.created_at,
+            "user_id": comment.user_id,
+            "username": comment.user.username if comment.user else "Unknown",
+            "replies": []
+        })
+    return result
 
 #get replies for a comment
 @router.get("/comment/{comment_id}/replies", response_model=list[CommentOut])

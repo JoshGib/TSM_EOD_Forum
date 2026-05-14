@@ -38,7 +38,7 @@ def create_thread(thread: ThreadCreate, db: Session = Depends(get_db), current_u
 #get all threads
 @router.get("/", response_model=list[ThreadOut])
 def get_threads(db: Session = Depends(get_db)):
-    threads = db.query(Thread).all()
+    threads = db.query(Thread).order_by(Thread.created_at.desc()).all()
     results = []
     for thread in threads:
         user = db.query(User).filter(User.id == thread.user_id).first()
@@ -51,6 +51,7 @@ def get_threads(db: Session = Depends(get_db)):
             "content": thread.content,
             "views": thread.views,
             "likes_count": thread.likes_count,
+            "dislikes_count": thread.dislikes_count,
             "is_pinned": thread.is_pinned,
             "is_locked": thread.is_locked,
             "user_id": thread.user_id,
@@ -78,7 +79,7 @@ def get_thread(thread_id: int, db: Session = Depends(get_db)):
         "is_pinned": thread.is_pinned,
         "is_locked": thread.is_locked,
         "user_id": thread.user_id,
-        "author_username": user.username if user else "Unknown",
+        "username": user.username if user else "Unknown",
         "replies_count": replies_count
     }
 

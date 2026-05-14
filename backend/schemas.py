@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List, Any
 from datetime import datetime
 
 #user schemas
@@ -57,7 +57,7 @@ class CommentOut(BaseModel):
     created_at: datetime
     user_id: int
     username: str
-    replies: list = []
+    replies: List[Any] = []
 
     class Config:
         from_attributes = True
