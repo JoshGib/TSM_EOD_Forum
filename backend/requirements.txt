@@ -1,7 +1,6 @@
 fastapi>=0.110
 uvicorn[standard]>=0.27
 python-multipart>=0.0.9
-bcrypt
 pandas>=2.1
 sqlalchemy>=2.0
 psycopg2-binary>=2.9
@@ -9,6 +8,7 @@ python-dotenv
 email-validator
 pydantic[email]
 passlib[bcrypt]
+bcrypt==4.0.1
 python-jose[cryptography]
 
 # Machine Learning & NLP
