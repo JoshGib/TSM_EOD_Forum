@@ -90,7 +90,7 @@ Base.metadata.create_all(bind=engine)
 # Allow localhost:3000 and Hugging Face
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://tsmforumfeed-yeww6.ondigitalocean.app/", "*"],
+    allow_origins=["http://localhost:3000", "https://tsmforumfeed-yeww6.ondigitalocean.app"],
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
