@@ -90,7 +90,7 @@ Base.metadata.create_all(bind=engine)
 # Allow localhost:3000 and Hugging Face
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://*.hf.space", "*"],
+    allow_origins=["http://localhost:3000", "https://tsmforumfeed-yeww6.ondigitalocean.app/", "*"],
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
@@ -361,4 +361,5 @@ async def get_report():
 
 # Entry point (local dev: python app.py)
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 7860))
     uvicorn.run("app:app", host="0.0.0.0", port=7860, reload=True)
