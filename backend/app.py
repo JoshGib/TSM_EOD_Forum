@@ -257,9 +257,13 @@ async def startup():
         raw_df = pd.read_csv(INPUT_CSV, encoding="utf-8")
         print(f"CSV loaded — columns: {raw_df.columns.tolist()}, rows: {len(raw_df)}")
 
+        db = SessionLocal()
         df = clean_dataframe(raw_df)
         #johana: save summaries to the database on startup
-        save_summary_to_db(df, db)
+        try:
+          save_summary_to_db(df, db)
+        finally:
+          db.close()
         print(f"Cleaned — rows: {len(df)}")
 
         cols_to_drop = [c for c in DROP_COLS if c in df.columns]
@@ -361,4 +365,4 @@ async def get_report():
 # Entry point (local dev: python app.py)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860))
-    uvicorn.run("app:app", host="0.0.0.0", port=7860, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
