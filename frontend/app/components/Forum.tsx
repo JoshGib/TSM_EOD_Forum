@@ -39,6 +39,10 @@ export function Forum() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportingComment, setReportingComment] = useState<Comment | null>(null);
 
+  const [newThreadTitle, setNewThreadTitle] = useState('');
+  const [newThreadContent, setNewThreadContent] = useState('');
+  const [newThreadCategory, setNewThreadCategory] = useState('');
+
   const [showNewThreadModal, setShowNewThreadModal] = useState(false);
 
 const categories = [
@@ -133,6 +137,7 @@ const handlePostComment = async (threadId: number) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
       body: JSON.stringify({
         thread_id: threadId,
@@ -170,6 +175,49 @@ const submitReport = async (reason: string) => {
   }
 };
 
+const handleCreateThread = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!user){
+    alert('You must be logged in to create a thread.');
+    return;
+  }
+  if (!newThreadTitle.trim() || !newThreadContent.trim() || !newThreadCategory) {
+    alert('Please fill in all fields to create a thread.');
+    return;
+  }
+
+  try {
+    const response = await fetch('http://localhost:8000/threads/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({
+        title: newThreadTitle,
+        content: newThreadContent,
+        category: newThreadCategory,
+      }),
+    });
+
+    const data = await response.json();
+    console.log('FULL BACKEND RESPONSE:', data);
+
+    if (!response.ok) {
+      alert(JSON.stringify(data));
+      throw new Error(data.error || 'Failed to create thread');
+    }
+    setShowNewThreadModal(false);
+    setNewThreadTitle('');
+    setNewThreadContent('');
+    setNewThreadCategory('');
+
+    await fetchThreads();
+  } catch (error) {
+    console.error('Error creating thread:', error);
+    alert('There was an error creating the thread. Please try again.');
+  }
+};
 const filteredThreads = forumThreads.filter(t => {
   const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) || t.content.toLowerCase().includes(searchQuery.toLowerCase());
   const matchesCategory = selectedCategory === 'All Categories' || t.category === selectedCategory;
@@ -448,13 +496,23 @@ const filteredThreads = forumThreads.filter(t => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Create New Thread</h2>
-            <form className="space-y-6">
+            <form 
+              onSubmit={handleCreateThread}
+              className='space-y-6'
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category
                 </label>
-                <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                  {categories.filter(cat => cat !== 'All Categories').map(cat => (
+                <select 
+                  value={newThreadCategory}
+                  onChange={(e) => setNewThreadCategory(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                    <option value="" disabled>
+                    Select a category
+                    </option>
+                  {categories.filter(cat => cat !== 'All Categories').map(cat => ( 
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
@@ -466,7 +524,8 @@ const filteredThreads = forumThreads.filter(t => {
                 </label>
                 <input
                   type="text"
-                  placeholder="Enter a descriptive title..."
+                  value ={newThreadTitle}
+                  onChange={(e) => setNewThreadTitle(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -477,6 +536,8 @@ const filteredThreads = forumThreads.filter(t => {
                 </label>
                 <textarea
                   rows={6}
+                  value ={newThreadContent}
+                  onChange={(e) => setNewThreadContent(e.target.value)}
                   placeholder="Share your thoughts, questions, or insights..."
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 />

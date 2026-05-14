@@ -51,6 +51,9 @@ def get_threads(db: Session = Depends(get_db)):
             "content": thread.content,
             "views": thread.views,
             "likes_count": thread.likes_count,
+            "is_pinned": thread.is_pinned,
+            "is_locked": thread.is_locked,
+            "user_id": thread.user_id,
             "created_at": thread.created_at,
             "author_username": user.username if user else "Unknown",
             "replies_count": replies_count
@@ -72,6 +75,9 @@ def get_thread(thread_id: int, db: Session = Depends(get_db)):
     replies_count = db.query(Comment).filter(Comment.thread_id == thread.id).count()
     return {
         **thread.__dict__,
+        "is_pinned": thread.is_pinned,
+        "is_locked": thread.is_locked,
+        "user_id": thread.user_id,
         "author_username": user.username if user else "Unknown",
         "replies_count": replies_count
     }
