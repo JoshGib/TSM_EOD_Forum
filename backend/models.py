@@ -105,19 +105,11 @@ class FinancialSummary(Base):
     report_date = Column(String, unique=True, nullable=False)
     summary_text = Column(Text, nullable=False)
     market_tone = Column(String, nullable=False)
+    source_urls = Column(Text, nullable=True)  
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    sources = relationship('SummarySource', back_populates='summary', cascade='all, delete')
     sectors = relationship('SectorPerformance', back_populates='summary', cascade='all, delete')    
 
-class SummarySource(Base):
-    __tablename__ = 'summary_sources'
-    id = Column(Integer, primary_key=True, index=True)
-    summary_id = Column(Integer, ForeignKey('financial_summaries.id'))
-    source_name = Column(String, nullable=False)
-    source_url = Column(String, nullable=False)
-
-    summary = relationship('FinancialSummary', back_populates='sources')
 
 class SectorPerformance(Base):
     __tablename__ = 'sector_performance'

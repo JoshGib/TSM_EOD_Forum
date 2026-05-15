@@ -114,17 +114,6 @@ class AdminReportOut(BaseModel):
     class Config:
         from_attributes = True
 #Financial summary schemas
-class SummarySourceCreate(BaseModel):
-    source_name: str
-    source_url: str
-
-class SummarySourceOut(BaseModel):
-    id: int
-    source_name: str
-    source_url: str
-
-    class Config:
-        from_attributes = True
 
 class SectorPerformanceOut(BaseModel):
     id: int
@@ -138,14 +127,15 @@ class FinancialSummaryCreate(BaseModel):
     report_date: str
     summary_text: str
     market_tone: str
+    source_urls: Optional[str] = None
 
 class FinancialSummaryOut(BaseModel):
     id: int
     report_date: str
     summary_text: str
     market_tone: str
+    source_urls: Optional[str] = None
     created_at: datetime
-    sources: list[SummarySourceOut] = []
     sectors: list[SectorPerformanceOut] = []
 
     class Config:
