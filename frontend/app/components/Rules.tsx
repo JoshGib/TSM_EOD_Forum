@@ -1,14 +1,14 @@
 export default function Rules() {
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-blue-600 mb-6">
+      <h1 className="text-3xl font-bold text-blue-950 mb-6">
         Forum Rules & Terms
       </h1>
 
       <div className="space-y-6 text-gray-700">
 
         <section>
-          <h2 className="text-2xl font-semibold text-blue-600 mb-2">
+          <h2 className="text-2xl font-semibold text-blue-700 mb-2">
             1. No Inappropriate Content
           </h2>
           <p>
@@ -18,7 +18,7 @@ export default function Rules() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-blue-600 mb-2">
+          <h2 className="text-2xl font-semibold text-blue-700 mb-2">
             2. No Spam or Fake Accounts
           </h2>
           <p>
@@ -28,7 +28,7 @@ export default function Rules() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-blue-600 mb-2">
+          <h2 className="text-2xl font-semibold text-blue-700 mb-2">
             3. Keep Information Accurate
           </h2>
           <p>
@@ -38,7 +38,7 @@ export default function Rules() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-blue-600 mb-2">
+          <h2 className="text-2xl font-semibold text-blue-700 mb-2">
             4. Protect Privacy
           </h2>
           <p>
@@ -48,7 +48,7 @@ export default function Rules() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-blue-600 mb-2">
+          <h2 className="text-2xl font-semibold text-blue-700 mb-2">
             5. Moderator Rights
           </h2>
           <p>
@@ -58,7 +58,7 @@ export default function Rules() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-semibold text-blue-600 mb-2">
+          <h2 className="text-2xl font-semibold text-blue-700 mb-2">
             6. Acceptance of Terms
           </h2>
           <p>

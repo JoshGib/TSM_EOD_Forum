@@ -105,6 +105,28 @@ export function Login() {
             </button>
           </form>
 
+          {/* Demo Credentials
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start space-x-2">
+              <Users className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-blue-900 mb-2">Demo Accounts Available:</p>
+                <div className="space-y-2 text-blue-800">
+                  <div className="bg-white p-2 rounded">
+                    <p className="font-mono text-xs">📧 demo@example.com</p>
+                    <p className="font-mono text-xs">🔐 password</p>
+                    <p className="text-xs text-blue-600">Regular User (Sarah)</p>
+                  </div>
+                  <div className="bg-white p-2 rounded">
+                    <p className="font-mono text-xs">📧 admin@example.com</p>
+                    <p className="font-mono text-xs">🔐 password</p>
+                    <p className="text-xs text-blue-600">Admin User</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div> */}
+
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}

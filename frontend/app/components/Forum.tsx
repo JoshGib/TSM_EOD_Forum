@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles, Send, Flag, ChevronDown, ChevronUp, ThumbsDown } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles, Send, Flag, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 
 interface Comment {
   id: number;
@@ -11,6 +11,7 @@ interface Comment {
   likes: number;
   dislikes: number;
   timeAgo: string;
+  userId?: number;
 }
 
 interface Thread {
@@ -46,6 +47,16 @@ export function Forum() {
   const [newThreadCategory, setNewThreadCategory] = useState('');
 
   const [showNewThreadModal, setShowNewThreadModal] = useState(false);
+  const [likedThreads, setLikedThreads] = useState<Set<number>>(new Set());
+  const [likedComments, setLikedComments] = useState<Set<number>>(new Set());
+  const [editingThreadId, setEditingThreadId] = useState<number | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editThreadTitle, setEditThreadTitle] = useState('');
+  const [editThreadContent, setEditThreadContent] = useState('');
+  const [editCommentContent, setEditCommentContent] = useState('');
+  const [showEditThreadModal, setShowEditThreadModal] = useState(false);
+  const [showEditCommentModal, setShowEditCommentModal] = useState(false);
+  const [threadMenuOpen, setThreadMenuOpen] = useState<number | null>(null);
 
 const categories = [
   'All Categories',
@@ -74,7 +85,6 @@ const fetchThreads = async () => {
       replies: thread.replies_count ?? 0,
       views: thread.views ?? 0,
       likes: thread.likes_count ?? 0,
-      dislikes: thread.dislikes_count ?? 0,
       timeAgo: 'Just now',
       isPinned:false,
     }));
@@ -87,7 +97,7 @@ const fetchThreads = async () => {
 
 const fetchComments = async (threadId: number) => {
   try {
-    const response = await fetch(`${API_URL}/comments/thread/${threadId}`);
+    const response = await fetch('http://localhost:8000/comments/thread/${threadId}');
     const data = await response.json();
 
     const formattedComments = data.map((c: any) => ({
@@ -97,7 +107,6 @@ const fetchComments = async (threadId: number) => {
       author: c.author_username || 'Unknown',
       content: c.content,
       likes: c.likes || 0,
-      dislikes: c.dislikes || 0,
       timeAgo: 'Just now',
     }));
 
@@ -114,24 +123,72 @@ useEffect(() => {
   fetchThreads();
 }, []);
 
-const toggleThread = async (threadId: number) => { 
+const toggleThread = (threadId: number) => { 
   setExpandedThreads(prev => {
-  const newSet = new Set(expandedThreads);
-  if (newSet.has(threadId)) {
-    newSet.delete(threadId);
-  }else {
-    newSet.add(threadId);
-    fetchComments(threadId);
-    
-  }
-  return newSet;
-});
-
+    const newSet = new Set(prev);
+    if (newSet.has(threadId)) {
+      newSet.delete(threadId);
+    } else {
+      newSet.add(threadId);
+      fetchComments(threadId);
+    }
+    return newSet;
+  });
 };
 
 const getThreadComments = (threadId: number) => {
   return comments.filter(c => c.threadId === threadId);
 }
+
+const handleLikeThread = async (threadId: number) => {
+  if (!user) return;
+  const isLiked = likedThreads.has(threadId);
+  try {
+    await fetch(`${API_URL}/threads/${threadId}/${isLiked ? 'unlike' : 'like'}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    if (isLiked) {
+      setLikedThreads(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(threadId);
+        return newSet;
+      });
+    } else {
+      setLikedThreads(prev => new Set(prev).add(threadId));
+    }
+  } catch (error) {
+    console.error('Error liking thread:', error);
+  }
+};
+
+const handleLikeComment = async (commentId: number) => {
+  if (!user) return;
+  const isLiked = likedComments.has(commentId);
+  try {
+    await fetch(`${API_URL}/comments/${commentId}/${isLiked ? 'unlike' : 'like'}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    if (isLiked) {
+      setLikedComments(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(commentId);
+        return newSet;
+      });
+    } else {
+      setLikedComments(prev => new Set(prev).add(commentId));
+    }
+  } catch (error) {
+    console.error('Error liking comment:', error);
+  }
+};
 
 const handlePostComment = async (threadId: number) => {
   const content = newCommentText[threadId]?.trim();
@@ -159,6 +216,88 @@ const handlePostComment = async (threadId: number) => {
 const handleReportComment = (comment: Comment) => {
   setReportingComment(comment);
   setShowReportModal(true);
+};
+
+const handleEditThread = async () => {
+  if (!editingThreadId || !editThreadTitle.trim() || !editThreadContent.trim()) return;
+  try {
+    const response = await fetch(`${API_URL}/threads/${editingThreadId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({
+        title: editThreadTitle,
+        content: editThreadContent,
+      }),
+    });
+    if (response.ok) {
+      setShowEditThreadModal(false);
+      setEditingThreadId(null);
+      await fetchThreads();
+    }
+  } catch (error) {
+    console.error('Error editing thread:', error);
+  }
+};
+
+const handleDeleteThread = async (threadId: number) => {
+  if (!window.confirm('Are you sure you want to delete this thread?')) return;
+  try {
+    const response = await fetch(`${API_URL}/threads/${threadId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    if (response.ok) {
+      await fetchThreads();
+    }
+  } catch (error) {
+    console.error('Error deleting thread:', error);
+  }
+};
+
+const handleEditComment = async () => {
+  if (!editingCommentId || !editCommentContent.trim()) return;
+  try {
+    const response = await fetch(`${API_URL}/comments/${editingCommentId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({
+        content: editCommentContent,
+      }),
+    });
+    if (response.ok) {
+      setShowEditCommentModal(false);
+      setEditingCommentId(null);
+      const threadId = comments.find(c => c.id === editingCommentId)?.threadId;
+      if (threadId) await fetchComments(threadId);
+    }
+  } catch (error) {
+    console.error('Error editing comment:', error);
+  }
+};
+
+const handleDeleteComment = async (commentId: number, threadId: number) => {
+  if (!window.confirm('Are you sure you want to delete this comment?')) return;
+  try {
+    const response = await fetch(`${API_URL}/comments/${commentId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    if (response.ok) {
+      await fetchComments(threadId);
+    }
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+  }
 };
 
 const submitReport = async (reason: string) => {
@@ -364,6 +503,43 @@ const filteredThreads = forumThreads.filter(t => {
                           {thread.category}
                         </span>
                       </div>
+                      {user?.name === thread.author && (
+                        <div className="relative">
+                          <button
+                            onClick={() => setThreadMenuOpen(threadMenuOpen === thread.id ? null : thread.id)}
+                            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                          >
+                            <MoreVertical className="w-5 h-5 text-gray-500" />
+                          </button>
+                          {threadMenuOpen === thread.id && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                              <button
+                                onClick={() => {
+                                  setEditingThreadId(thread.id);
+                                  setEditThreadTitle(thread.title);
+                                  setEditThreadContent(thread.content);
+                                  setShowEditThreadModal(true);
+                                  setThreadMenuOpen(null);
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 text-sm text-gray-700"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                                <span>Edit Thread</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleDeleteThread(thread.id);
+                                  setThreadMenuOpen(null);
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-red-50 flex items-center space-x-2 text-sm text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                <span>Delete Thread</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -378,23 +554,22 @@ const filteredThreads = forumThreads.filter(t => {
                       <span className="font-medium text-gray-700">{thread.author}</span>
                       <div className="flex items-center space-x-1">
                         <Clock className="w-4 h-4" />
-                        <span>{thread.timeAgo}</span>
+                        <span>{formatTime(thread.timeAgo)}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <MessageSquare className="w-4 h-4" />
                         <span>{threadComments.length} replies</span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Eye className="w-4 h-4" />
-                        <span>{thread.views} views</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => handleLikeThread(thread.id)}
+                        className={`flex items-center space-x-1 transition-colors ${
+                          likedThreads.has(thread.id)
+                            ? 'text-blue-600'
+                            : 'text-gray-500 hover:text-blue-600'
+                        }`}
+                      >
                         <ThumbsUp className="w-4 h-4" />
                         <span>{thread.likes} likes</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <ThumbsDown className="w-4 h-4" />
-                        <span>{thread.dislikes} dislikes</span>
                       </div>
                     </div>
 
@@ -442,25 +617,52 @@ const filteredThreads = forumThreads.filter(t => {
                                 <div className="flex items-center space-x-2">
                                   <span className="font-medium text-gray-900 text-sm">{comment.author}</span>
                                   <span className="text-gray-500 text-xs">•</span>
-                                  <span className="text-gray-500 text-xs">{comment.timeAgo}</span>
+                                  <span className="text-gray-500 text-xs">{formatTime(comment.timeAgo)}</span>
                                 </div>
-                                <button
-                                  onClick={() => handleReportComment(comment)}
-                                  className="text-gray-400 hover:text-red-500 transition-colors"
-                                  title="Report comment"
-                                >
-                                  <Flag className="w-4 h-4" />
-                                </button>
+                                <div className="flex items-center space-x-1">
+                                  <button
+                                    onClick={() => handleReportComment(comment)}
+                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                    title="Report comment"
+                                  >
+                                    <Flag className="w-4 h-4" />
+                                  </button>
+                                  {user?.name === comment.author && (
+                                    <>
+                                      <button
+                                        onClick={() => {
+                                          setEditingCommentId(comment.id);
+                                          setEditCommentContent(comment.content);
+                                          setShowEditCommentModal(true);
+                                        }}
+                                        className="text-gray-400 hover:text-blue-500 transition-colors"
+                                        title="Edit comment"
+                                      >
+                                        <Edit2 className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteComment(comment.id, thread.id)}
+                                        className="text-gray-400 hover:text-red-500 transition-colors"
+                                        title="Delete comment"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
                               </div>
                               <p className="text-gray-700 text-sm mb-2">{comment.content}</p>
-                              <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors text-xs">
+                              <button
+                                onClick={() => handleLikeComment(comment.id)}
+                                className={`flex items-center space-x-1 transition-colors text-xs ${
+                                  likedComments.has(comment.id)
+                                    ? 'text-blue-600'
+                                    : 'text-gray-500 hover:text-blue-600'
+                                }`}
+                              >
                                 <ThumbsUp className="w-3 h-3" />
                                 <span>{comment.likes}</span>
                               </button>
-                              <button className="flex items-center space-x-1 text-gray-500 hover:text-red-600 transition-colors text-xs ml-4">
-                                <ThumbsDown className="w-3 h-3" />
-                                <span>{comment.dislikes}</span>
-                                </button>
                             </div>
                           </div>
                         </div>
@@ -614,6 +816,102 @@ const filteredThreads = forumThreads.filter(t => {
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Thread Modal */}
+      {showEditThreadModal && editingThreadId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit Thread</h2>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Thread Title
+                </label>
+                <input
+                  type="text"
+                  value={editThreadTitle}
+                  onChange={(e) => setEditThreadTitle(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Content
+                </label>
+                <textarea
+                  rows={6}
+                  value={editThreadContent}
+                  onChange={(e) => setEditThreadContent(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditThreadModal(false);
+                    setEditingThreadId(null);
+                  }}
+                  className="px-6 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleEditThread}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Comment Modal */}
+      {showEditCommentModal && editingCommentId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit Comment</h2>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Comment
+                </label>
+                <textarea
+                  rows={4}
+                  value={editCommentContent}
+                  onChange={(e) => setEditCommentContent(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditCommentModal(false);
+                    setEditingCommentId(null);
+                  }}
+                  className="px-6 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleEditComment}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

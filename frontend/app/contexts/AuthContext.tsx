@@ -1,5 +1,19 @@
 "use client"
 
+// /**
+//  * DEMO USERS FOR TESTING:
+//  * 
+//  * Regular User:
+//  *   Email: demo@example.com
+//  *   Password: password
+//  *   Name: Sarah
+//  * 
+//  * Admin User:
+//  *   Email: admin@example.com
+//  *   Password: password
+//  *   Name: Demo Admin
+//  */
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
@@ -72,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setError(null);
 
-    // Demo admin user logic
+    // // Demo admin user logic
     // if (email === 'admin@example.com' && password === 'password') {
     //   const demoAdminUser: User = {
     //     id: 'admin-123',
@@ -83,6 +97,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     //   };
     //   setUser(demoAdminUser);
     //   localStorage.setItem('user', JSON.stringify(demoAdminUser));
+    //   return;
+    // }
+
+    // // Demo regular user logic
+    // if (email === 'demo@example.com' && password === 'password') {
+    //   const demoUser: User = {
+    //     id: 'demo-user-456',
+    //     email: 'demo@example.com',
+    //     name: 'Sarah',
+    //     role: 'user',
+    //     isAdmin: false,
+    //   };
+    //   setUser(demoUser);
+    //   localStorage.setItem('user', JSON.stringify(demoUser));
     //   return;
     // }
     
