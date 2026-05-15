@@ -88,7 +88,7 @@ export function HomeComponent() {
         </p>
         <div className="flex flex-wrap gap-3">
           <a
-            href="https://tsmforumfeed-yeww6.ondigitalocean.app/group-3---main-ml/test_reports.html"
+            href="https://tsmforumfeed-yeww6.ondigitalocean.app/eod-report"
             className="px-6 py-3 bg-white text-blue-800 rounded-lg hover:bg-blue-50 transition-colors font-medium"
           >
             View Today's Report
