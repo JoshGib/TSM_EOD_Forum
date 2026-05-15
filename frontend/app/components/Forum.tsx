@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles, Send, Flag, ChevronDown, ChevronUp, ThumbsDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 interface Comment {
   id: number;
@@ -58,7 +58,7 @@ const categories = [
 
 const fetchThreads = async () => {
   try {
-    const response = await fetch('http://localhost:8000/threads/');
+    const response = await fetch(`${API_URL}/threads/`);
     if (!response.ok) {
       throw new Error('Failed to fetch threads');
     }
@@ -87,7 +87,7 @@ const fetchThreads = async () => {
 
 const fetchComments = async (threadId: number) => {
   try {
-    const response = await fetch(`http://localhost:8000/comments/thread/${threadId}`);
+    const response = await fetch(`${API_URL}/comments/thread/${threadId}`);
     const data = await response.json();
 
     const formattedComments = data.map((c: any) => ({
@@ -137,7 +137,7 @@ const handlePostComment = async (threadId: number) => {
   const content = newCommentText[threadId]?.trim();
   if (!content || !user) return
   try {
-    await fetch('http://localhost:8000/comments/', {
+    await fetch(`${API_URL}/comments/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -164,10 +164,11 @@ const handleReportComment = (comment: Comment) => {
 const submitReport = async (reason: string) => {
   if (!reportingComment) return;
   try {
-    await fetch('http://localhost:8000/reports/', {
+    await fetch(`${API_URL}/reports/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
       body: JSON.stringify({
         comment_id: reportingComment.id,
@@ -191,7 +192,7 @@ const handleCreateThread = async (e: React.FormEvent) => {
   }
 
   try {
-    const response = await fetch('http://localhost:8000/threads/', {
+    const response = await fetch(`${API_URL}/threads/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
