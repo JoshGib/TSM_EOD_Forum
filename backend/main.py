@@ -9,7 +9,7 @@ app = FastAPI()
 
 @app.on_event("startup")
 def startup():
-    Base.metadata.create_all(bind=engine)
+    print("Website started - DB handled by Alembic migrations")
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,3 +29,6 @@ app.include_router(comments.router)
 def read_root():
     return {"message": "Backend is running"}
     
+
+
+

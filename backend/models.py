@@ -16,7 +16,7 @@ class User(Base):
     threads = relationship('Thread', back_populates='owner')
     comments = relationship('Comment', back_populates='user')
     bans = relationship('Blacklist', foreign_keys='Blacklist.user_id', back_populates='user')
-    admin_bans = relationship('Blacklist', foreign_keys='Blacklist.banned_by_admin')
+    admin_bans = relationship('Blacklist', foreign_keys='Blacklist.banned_by_admin', overlaps="admin")
 
 # Forum tables
 class Thread(Base):
@@ -82,7 +82,7 @@ class Blacklist(Base):
     banned_by_admin = Column(Integer, ForeignKey('users.id'))
 
     user = relationship('User', foreign_keys=[user_id], back_populates='bans')
-    admin = relationship('User', foreign_keys=[banned_by_admin])
+    admin = relationship('User', foreign_keys=[banned_by_admin], overlaps="admin_bans")
 
 class ReportingFlag(Base):
     __tablename__ = 'reporting_flags'
