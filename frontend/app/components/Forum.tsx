@@ -570,7 +570,7 @@ const filteredThreads = forumThreads.filter(t => {
                       >
                         <ThumbsUp className="w-4 h-4" />
                         <span>{thread.likes} likes</span>
-                      </div>
+                      </button>
                     </div>
 
                     {/* View Comments Button */}
