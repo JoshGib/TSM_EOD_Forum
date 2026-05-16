@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, Calendar, Play, Pause, ExternalLink, MessageSquare, Sparkles } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+const ML_URL  = process.env.NEXT_PUBLIC_ML_URL ?? '';
 
 // Matches schemas.FinancialSummaryOut on the backend
 interface SectorPerformance {
@@ -74,7 +75,7 @@ export function EODReport() {
   // Pull the most-recent financial summaries from the backend (Supabase via app.py)
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_URL}/financial-summaries?limit=4`)
+    fetch(`${ML_URL}/financial-summaries?limit=4`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -110,7 +111,7 @@ export function EODReport() {
   };
 
   // Each card opens the backend-rendered archive (top 5 from DB)
-  const reportsArchiveHref = `${API_URL}/test_reports.html`;
+  const reportsArchiveHref = `${ML_URL}/test_reports.html`;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
