@@ -212,7 +212,7 @@ export function EODReport() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <BarChart3 className="w-6 h-6 text-gray-700" />
-                <h2 className="text-2xl font-bold text-gray-900">Live Market Updates</h2>
+                <h2 className="text-2xl font-bold text-gray-900">End of Day Summary</h2>
               </div>
               <a
                 href="/forum"
