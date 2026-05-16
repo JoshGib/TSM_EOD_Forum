@@ -110,7 +110,7 @@ def load_from_db(limit: int = 5) -> pd.DataFrame:
     try:
         rows = (
             db.query(FinancialSummary)
-            .order_by(FinancialSummary.created_at.desc())
+            .order_by(FinancialSummary.report_date.desc())
             .limit(limit)
             .all()
         )
@@ -334,11 +334,11 @@ def list_financial_summaries(
 ):
     """
     Returns the most-recent financial summaries from Supabase,
-    sorted by created_at DESC. Consumed by the EODReport.tsx Live Market Updates panel.
+    sorted by report_date DESC. Consumed by the EODReport.tsx Live Market Updates panel.
     """
     rows = (
         db.query(FinancialSummary)
-        .order_by(FinancialSummary.created_at.desc())
+        .order_by(FinancialSummary.report_date.desc())
         .limit(limit)
         .all()
     )
