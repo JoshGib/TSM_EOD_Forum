@@ -65,3 +65,8 @@ urllib3==2.6.3
 wheel==0.46.3
 xxhash==3.6.0
 yarl==1.23.0
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+pydantic
