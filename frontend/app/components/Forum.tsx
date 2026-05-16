@@ -131,7 +131,7 @@ const fetchComments = async (threadId: number) => {
 
 useEffect(() => {
   fetchThreads();
-}, []);
+}, [API_URL]); 
 
 const toggleThread = (threadId: number) => { 
   setExpandedThreads(prev => {
@@ -140,7 +140,11 @@ const toggleThread = (threadId: number) => {
       newSet.delete(threadId);
     } else {
       newSet.add(threadId);
-      fetchComments(threadId);
+      const hasComments = comments.some(c => c.threadId === threadId);
+      if(!hasComments){
+        fetchComments(threadId);
+      }
+      
     }
     return newSet;
   });
@@ -328,15 +332,23 @@ const submitReport = async (reason: string) => {
     console.error('Error submitting report:', error);
   }
 };
-
+const [isPosting, setIsPosting] = useState(false);
 const handleCreateThread = async (e: React.FormEvent) => {
   e.preventDefault();
+
+  console.log('CREATE THREAD CLICKED');
+
+  if (isPosting) return;
+  setIsPosting(true);
+
   if (!user){
     alert('You must be logged in to create a thread.');
+    setIsPosting(false);
     return;
   }
   if (!newThreadTitle.trim() || !newThreadContent.trim() || !newThreadCategory) {
     alert('Please fill in all fields to create a thread.');
+    setIsPosting(false);
     return;
   }
 
@@ -370,15 +382,17 @@ const handleCreateThread = async (e: React.FormEvent) => {
   } catch (error) {
     console.error('Error creating thread:', error);
     alert('There was an error creating the thread. Please try again.');
+  }finally {
+    setIsPosting(false);
   }
 };
 const formatTime = (dateString: string) => {
   if (!dateString) return 'Unknown time';
-  const date = new Date(dateString ?? '');
+  const date = new Date(dateString.endsWith('Z') ? dateString : `${dateString}Z`);
   if (isNaN(date.getTime())) return 'Unknown time';
   const now = new Date();
   
-  let diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+ const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
   console.log({
   dateString,
   parsed: date.toISOString(),
@@ -389,6 +403,9 @@ const formatTime = (dateString: string) => {
   const hours = Math.floor(diffInSeconds / (60 * 60));
   const days = Math.floor(diffInSeconds / (60 * 60 * 24));
 
+  if (diffInSeconds < 0){
+    return 'Just now';
+  }
   if (diffInSeconds < 60) {
     return 'Just now';
   } else if (minutes < 60) {
@@ -402,6 +419,7 @@ const formatTime = (dateString: string) => {
   };
 
 };
+
 
 const filteredThreads = forumThreads.filter(t => {
   const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) || t.content.toLowerCase().includes(searchQuery.toLowerCase());
@@ -507,7 +525,7 @@ const filteredThreads = forumThreads.filter(t => {
       <div className="space-y-4">
         {filteredThreads.map((thread) => {
           const isExpanded = expandedThreads.has(thread.id);
-          const threadComments = getThreadComments(thread.id);
+          const threadComments = comments.filter(c => c.threadId === thread.id);
 
           return (
             <div
@@ -599,7 +617,7 @@ const filteredThreads = forumThreads.filter(t => {
                       </div>
                       <div className="flex items-center space-x-1">
                         <MessageSquare className="w-4 h-4" />
-                        <span>{threadComments.length} replies</span>
+                        <span>{thread.replies} replies</span>
                       </div>
                       <button
                         onClick={() => handleLikeThread(thread.id)}
@@ -628,7 +646,7 @@ const filteredThreads = forumThreads.filter(t => {
                       ) : (
                         <>
                           <ChevronDown className="w-4 h-4" />
-                          <span>View {threadComments.length} {threadComments.length === 1 ? 'comment' : 'comments'}</span>
+                          <span>View {thread.replies} {thread.replies === 1 ? 'comment' : 'comments'}</span>
                         </>
                       )}
                     </button>
@@ -641,7 +659,11 @@ const filteredThreads = forumThreads.filter(t => {
                 <div className="border-t border-gray-200 bg-gray-50 p-6">
                   {/* Existing Comments */}
                   <div className="space-y-4 mb-4">
-                    {threadComments.length === 0 ? (
+                    {isExpanded&& threadComments.length === 0 ? (
+                      <p className="text-gray-500 text-sm text-center py-4">
+                        Loading comments...
+                      </p>
+                    ) : threadComments.length === 0 ? (
                       <p className="text-gray-500 text-sm text-center py-4">
                         No comments yet. Be the first to comment!
                       </p>
@@ -810,9 +832,10 @@ const filteredThreads = forumThreads.filter(t => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  disabled={isPosting}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Post Thread
+                  {isPosting ? 'Posting...' : 'Post Thread'}
                 </button>
               </div>
             </form>
