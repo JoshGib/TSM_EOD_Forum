@@ -104,7 +104,7 @@ function AdminPageContent() {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('Token');
+      const token = localStorage.getItem('token');
       const res = await fetch(
         "http://127.0.0.1:8000/admin/reports",
         {
@@ -122,7 +122,7 @@ function AdminPageContent() {
       const formatted: ReportedComment[] = data.map((item: any) => ({
         id: item.id,
         commentId: item.comment_id,
-        content: item.content,
+        content: item.comment_content,
         author: item.author_name,
         authorId: item.author_id,
         threadTitle: item.thread_title,
@@ -165,7 +165,7 @@ function AdminPageContent() {
       await fetch(`http://127.0.0.1:8000/admin/comments/${commentId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('Token')}`,
+      Authorization: `Bearer ${localStorage.getItem('token')}`,
           
         },
         
@@ -179,7 +179,7 @@ function AdminPageContent() {
       await fetch(`http://127.0.0.1:8000/admin/blacklist/${userId}`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('Token')}`,
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ user_id: userId, reason: 'User blacklisted by admin' }),
@@ -194,7 +194,7 @@ function AdminPageContent() {
       await fetch(`http://127.0.0.1:8000/admin/reports/${reportId}/dismiss`, {
         method: 'PUT',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('Token')}`,
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
       fetchReports();

@@ -1,5 +1,7 @@
 # GROUP 3 - main source
+
 ## Project Overview
+
 Retail trading became widespread during the 2020s and has led to many people to
 become first time investors. Apps like Robinhood made it so that anyone can just
 download an app, put in credentials and begin to trade. But with that accessibility
@@ -16,6 +18,7 @@ confidence. So we need to find a way to deliver information that first time inve
 can easily digest.
 
 ## Goals
+
 Create an accessible, organized, and visually engaging platform where users can
 participate in structured discussions based on daily market updates and reports.
 The platform will feature a moderated forum that encourages meaningful
@@ -25,9 +28,11 @@ and summarizes articles from The Wall Street Journal, providing users with clear
 and digestible market insights to guide their discussions.
 
 ## Installation Instructions
+
 ## Backend - Machine Learning
-The backend machine learning (ML) source code is implemented in Python 3.11.  Python 3.11
-is the standard ML language.  Do not use any later version of Python. It would not work
+
+The backend machine learning (ML) source code is implemented in Python 3.11. Python 3.11
+is the standard ML language. Do not use any later version of Python. It would not work
 with the installed packages.
 
 In order for the program to run correctly the following packages must be installed using
@@ -41,61 +46,59 @@ the pip installer on windows machines:
 On Windows 10/11 use the following command:
 
 Run:
+
 ## $ py -m pip install pandas transformers scikit-learn re
 
 If the packages do not install as listed, then install them individually using
+
 ## $ py -m pip install &lt;package&gt;
 
 Note: Ensure that the datasets appear in the same directory as the source code
 
-
-HOW TO SET UP THE PROJECT   
+HOW TO SET UP THE PROJECT
 
 1. Clone the repository and move to the project file
-git clone <repo-url>
-cd Group-3---Main
+   git clone <repo-url>
+   cd Group-3---Main
 
 2. PostgreSQL setup
-    1. Make sure PostgreSQL is running
-    sudo service postgresql start
+   1. Make sure PostgreSQL is running
+      sudo service postgresql start
 
-    2. Open PostgreSQL shell
-    sudo -u postgres psql
+   2. Open PostgreSQL shell
+      sudo -u postgres psql
 
-    3. Inside shell create the data base and user
-    CREATE DATABASE forum_db;
-    CREATE USER forum_user WITH PASSWORD 'password123'
-    GRANT ALL PRIVILIGES ON DATABASE forum_bd TO forum_user
-    \c forum_db
-    GRANT ALL SCHEMA public TO forum_user;
+   3. Inside shell create the data base and user
+      CREATE DATABASE forum_db;
+      CREATE USER forum_user WITH PASSWORD 'password123'
+      GRANT ALL PRIVILIGES ON DATABASE forum_bd TO forum_user
+      \c forum_db
+      GRANT ALL SCHEMA public TO forum_user;
 
-    4. if tables already exist, make sure the correct ownership is set
+   4. if tables already exist, make sure the correct ownership is set
 
-    ALTER TABLE users OWNER TO forum_user;
-    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO forum_user;
-    GRANT ALL PRIVILAGES ON ALL SEQUENCES IN SCHEMA public TO forum_user;
-
-    5. exit PostgreSQL
-    \q
+   ALTER TABLE users OWNER TO forum_user;
+   GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO forum_user;
+   GRANT ALL PRIVILAGES ON ALL SEQUENCES IN SCHEMA public TO forum_user; 5. exit PostgreSQL
+   \q
 
 3. Backend setup (FastAPI)
-    1. Go to backend folder
-    cd backend
-    
-    2. Create a virtual enviroment
-    python3 -m venv venv
-    source venv/bin/active
+   1. Go to backend folder
+      cd backend
+   2. Create a virtual enviroment
+      python3 -m venv venv
+      source venv/bin/active
 
-    3. isntal dependencies
-    pip install fastapi uvicorn sqlalchemy psycopg2-binary passlib bcrypt python-jose
-    
-    4. Run the backend server
-    uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   3. Install dependencies
+      pip install fastapi uvicorn sqlalchemy psycopg2-binary passlib bcrypt python-jose
+      pip install -r requirements.txt
+   4. Run the backend server
+      uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 4. API endpoints
-    1. Authentication routes:
-    * POST /auth/signup
-    * POST /auth/login
+   1. Authentication routes:
+   - POST /auth/signup
+   - POST /auth/login
 
 To test sigup manually in ../Group-3--Main
 curl -X POST http://127.0.0.1:8000/auth/signup \
@@ -105,117 +108,98 @@ curl -X POST http://127.0.0.1:8000/auth/signup \
 and also test login
 curl -X POST http://127.0.0.1:8000/auth/login \
 -H "Content-Type: application/json" \
--d '{"email":"test@test.com","password":"123"}'
-5. Frontend setup (Next.js)
-    1. Go to front end folder
-    cd frontend
-    2. install dependecies
-    npm install
+-d '{"email":"test@test.com","password":"123"}' 5. Frontend setup (Next.js) 1. Go to front end folder
+cd frontend 2. install dependecies
+npm install
 
     3. start the development server
     npm run dev
 
-
 6. Common setup issiues and fixes
-    1. Git// pull/reabse errors
-    git add .
-    git commit -m " ... "
-    git pull origin main --rebase
-    
+   1. Git// pull/reabse errors
+      git add .
+      git commit -m " ... "
+      git pull origin main --rebase
 
-    or 
+   or
 
-    git stash
-    git pull origin main --rebase
-    git stash pop
+   git stash
+   git pull origin main --rebase
+   git stash pop 2. Next.js/ frontend issues
+   "Can't resolve tailwinds"
+   broken or incomplete npm install
 
-    2.  Next.js/ frontend issues
-    "Can't resolve tailwinds"
-    broken or incomplete npm install
+   cd frontend
+   rm -rf node_modules package-lock.json
+   npm install
+   npm install -D tailwindcss@3 postcss autoprefixer
 
-    cd frontend
-    rm -rf node_modules package-lock.json
-    npm install
-    npm install -D tailwindcss@3 postcss autoprefixer
+   "Module not found: Can't resolve 'v8'"
 
+   rm -rf node_modules .next package-lock.json
+   npm install
+   npm run dev
 
-    "Module not found: Can't resolve 'v8'"
+   Warning: multiple lockfiles detected
+   projetc has lockfiles in both rooth and frontend. keep only this one:
+   frontend/package-lock.json
 
-    rm -rf node_modules .next package-lock.json
-    npm install
-    npm run dev
+   rm package-lock.json 3. Backend/FastAPI Issues
+   Error: curl request hangs (no response)
+   Cause:
+   PostgreSQL not runningg
+   DB conncetion stuck
+   AQLAlchemy blocking request
 
-    Warning: multiple lockfiles detected
-    projetc has lockfiles in both rooth and frontend. keep only this one:
-    frontend/package-lock.json
+   sudo systemcall start postgresql
 
-    rm package-lock.json
+   check backend logs, what is going on on the back end
 
-    3. Backend/FastAPI Issues
-    Error: curl request hangs (no response)
-    Cause:
-    PostgreSQL not runningg
-    DB conncetion stuck
-    AQLAlchemy blocking request
+   unicorn main:app --reload --log-level debug 4. Database Issues
+   Sigup is slow or freezes
+   DB connction issue
+   missing connetion pooling
+   bycryptr passwaord hasing delay
 
-    sudo systemcall start postgresql
+   engine = create_engine(
+   DATABASE_URL,
+   pool_pre_ping=True,
+   pool_size=5,
+   max_overflow=10
+   )
 
-    check backend logs, what is going on on the back end
+   DATABASE_URL not working, each one of us needs to create its own databse
+   create .env insite backend
 
-    unicorn main:app --reload --log-level debug
+   touch .env
 
-    4. Database Issues
-    Sigup is slow or freezes
-    DB connction issue
-    missing connetion pooling
-    bycryptr passwaord hasing delay
+   inside .env write:
 
-    engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10
-    )
+   #Replace the values below with your local postgreSQL
+   DATABASE_URL = postgresql://your_username:your_password@LOCALHOST:5432/your_database_name
+   1. Backend
+      if port 8000 or 3000 is already in use
+      lsof -i :8000
+      kill -9 <PID>
 
-    DATABASE_URL not working, each one of us needs to create its own databse
-    create .env insite backend
+   lsof -i :3000
+   kill -9 <PID>
 
-    touch .env
+   if nothing works  
+   uvicorn main:app --reload --log-level debug 2. Database
+   1. To inspect the the database
+      sudo -u postgres psql
 
-    inside .env write:
+   then connect
+   \c forum_db
 
-    #Replace the values below with your local postgreSQL
-    DATABASE_URL = postgresql://your_username:your_password@LOCALHOST:5432/your_database_name
-
-    1. Backend
-    if port 8000 or 3000 is already in use
-    lsof -i :8000
-    kill -9 <PID>
-
-    lsof -i :3000
-    kill -9 <PID>
-
-
-    if nothing works  
-    uvicorn main:app --reload --log-level debug
-
-    2. Database
-        1. To inspect the the database
-        sudo -u postgres psql
-
-        then connect
-        \c forum_db
-
-        tos ee stored susers:
-        SELECT * FROM users;
-    
-
+   tos ee stored susers:
+   SELECT \* FROM users;
 
 Stack used
-    Next.js
-    fastAPI,
-    PostgreSQL,
-    SQLAlchemy,
-    JWT authentication, 
-    bycrypt hashing
-
+Next.js
+fastAPI,
+PostgreSQL,
+SQLAlchemy,
+JWT authentication,
+bycrypt hashing

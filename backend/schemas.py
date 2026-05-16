@@ -20,6 +20,25 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True
 
+
+class UserProfileOut(BaseModel):
+    id: int
+    username: str
+    email: EmailStr
+    role: str
+    is_banned: bool
+    ban_reason: Optional[str] = None
+    ban_expires_at: Optional[datetime] = None
+
+
+class UserProfileUpdate(BaseModel):
+    username: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
 #thread schemas
 class ThreadCreate(BaseModel):
     title: str

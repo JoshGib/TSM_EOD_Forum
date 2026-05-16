@@ -24,17 +24,20 @@ A modern, responsive web application for trading discussions and market insights
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 16.x or higher
 - pnpm (recommended) or npm/yarn
 
 ### Installation
 
 1. Clone the repository and navigate to the frontend directory:
+
 ```bash
 cd frontend
 ```
 
 2. Install dependencies:
+
 ```bash
 pnpm install
 # or
@@ -42,6 +45,7 @@ npm install
 ```
 
 3. Run the development server:
+
 ```bash
 pnpm dev
 # or
@@ -87,16 +91,19 @@ frontend/
 ## Features in Detail
 
 ### Navigation
+
 - **Desktop View**: Full navigation bar with search, nav items, and user menu
 - **Mobile View**: Collapsible hamburger menu with integrated search bar
 - **Authentication**: Dynamic menu based on user login status
 
 ### Search
+
 - Available on both desktop and mobile views
 - Search query passed as URL parameter: `/search?q=query`
 - Integrated with navigation for easy access
 
 ### Authentication
+
 - Login and signup pages for user management
 - Context-based authentication state
 - Protected routes and conditional menu items
@@ -104,8 +111,9 @@ frontend/
 ## Environment Variables
 
 Create a `.env.local` file in the frontend directory:
+
 ```
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
 ## Learn More
@@ -127,4 +135,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is part of the TSM Forum initiative.
-

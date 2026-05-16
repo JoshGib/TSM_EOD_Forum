@@ -104,4 +104,25 @@ def delete_comment(comment_id: int, db: Session = Depends(get_db), current_user:
     db.refresh(comment)
 
     return {"detail": "Comment deleted successfully"}
-    
+
+
+@router.post("/{comment_id}/like")
+def like_comment(comment_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    comment = db.query(Comment).filter(Comment.id == comment_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    comment.likes_count = (comment.likes_count or 0) + 1
+    db.commit()
+    db.refresh(comment)
+    return {"detail": "Comment liked", "likes_count": comment.likes_count}
+
+
+@router.post("/{comment_id}/unlike")
+def unlike_comment(comment_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    comment = db.query(Comment).filter(Comment.id == comment_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    comment.likes_count = max(0, (comment.likes_count or 0) - 1)
+    db.commit()
+    db.refresh(comment)
+    return {"detail": "Comment unliked", "likes_count": comment.likes_count}

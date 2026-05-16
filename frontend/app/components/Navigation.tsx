@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, FileText, TrendingUp, MessageSquare, LogOut, Menu, X, Search, Loader2, Shield } from 'lucide-react';
+import { Home, FileText, TrendingUp, MessageSquare, LogOut, Menu, X, Search, Loader2, Shield, UserCircle } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from "../contexts/AuthContext";
 
@@ -111,6 +111,7 @@ export function Navigation() {
     { to: '/rules', label: 'Rules', icon: FileText },
     { to: '/eod-report', label: 'EOD Report', icon: TrendingUp },
     { to: '/forum', label: 'Forum', icon: MessageSquare },
+    ...(isAuthenticated ? [{ to: '/profile', label: 'Profile', icon: UserCircle }] : []),
   ];
 
   // Add admin link for admin users

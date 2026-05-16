@@ -1,11 +1,43 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from db import get_db
-from models import Report, User, Thread, Comment
+from models import Report, User, Thread, Comment, ReportingFlag
 from schemas import ReportCreate, ReportOut
 from auth import get_current_user
 
 router = APIRouter(prefix="/reports", tags=["reports"])
+
+
+def _serialize_report(db: Session, report: Report):
+    comment = db.query(Comment).filter(Comment.id == report.comment_id).first() if report.comment_id else None
+    author = db.query(User).filter(User.id == comment.user_id).first() if comment else None
+    thread = db.query(Thread).filter(Thread.id == report.thread_id).first() if report.thread_id else None
+    flags = db.query(ReportingFlag).filter(ReportingFlag.report_id == report.id).all()
+
+    return {
+        "id": report.id,
+        "reporter_id": report.reporter_id,
+        "reported_user_id": report.reported_user_id,
+        "thread_id": report.thread_id,
+        "comment_id": report.comment_id,
+        "status": report.status,
+        "priority": report.priority,
+        "created_at": report.created_at,
+        "comment_content": comment.content if comment else None,
+        "author_id": author.id if author else None,
+        "author_name": author.username if author else None,
+        "thread_title": thread.title if thread else None,
+        "flags": [
+            {
+                "userId": f.user_id,
+                "userName": f.user.username if f.user else "Unknown",
+                "reason": f.reason,
+                "timestamp": f.created_at,
+            }
+            for f in flags
+        ],
+    }
+
 # create a report
 @router.post("/", response_model=ReportOut)
 def create_report(report: ReportCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
@@ -15,8 +47,8 @@ def create_report(report: ReportCreate, db: Session = Depends(get_db), current_u
     db_user = db.query(User).filter(User.id == reporter_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
-    if not (report.thread_id or report.comment_id or report.user_id):
-        raise HTTPException(status_code=400, detail="At least one of thread_id, comment_id, or user_id must be provided")
+    if not (report.thread_id or report.comment_id or report.reported_user_id):
+        raise HTTPException(status_code=400, detail="At least one of thread_id, comment_id, or reported_user_id must be provided")
     if report.thread_id:
         db_thread = db.query(Thread).filter(Thread.id == report.thread_id).first()
         if not db_thread:
@@ -26,21 +58,41 @@ def create_report(report: ReportCreate, db: Session = Depends(get_db), current_u
         db_comment = db.query(Comment).filter(Comment.id == report.comment_id).first()
         if not db_comment:
             raise HTTPException(status_code=404, detail="Comment not found")
-    if report.user_id:
-        db_reported_user = db.query(User).filter(User.id == report.user_id).first()
+    if report.reported_user_id:
+        db_reported_user = db.query(User).filter(User.id == report.reported_user_id).first()
         if not db_reported_user:
             raise HTTPException(status_code=404, detail="Reported user not found")
-    new_report = Report(
-        reason=report.reason,
-        reporter_id=reporter_id,
-        thread_id=report.thread_id,
-        comment_id=report.comment_id,
-        reported_user_id=report.user_id
-    )
-    db.add(new_report)
+    existing_report = None
+    if report.comment_id:
+        existing_report = db.query(Report).filter(Report.comment_id == report.comment_id, Report.status == "pending").first()
+
+    if existing_report:
+        target_report = existing_report
+    else:
+        target_report = Report(
+            reporter_id=reporter_id,
+            thread_id=report.thread_id,
+            comment_id=report.comment_id,
+            reported_user_id=report.reported_user_id
+        )
+        db.add(target_report)
+        db.flush()
+
+    existing_flag = db.query(ReportingFlag).filter(
+        ReportingFlag.report_id == target_report.id,
+        ReportingFlag.user_id == reporter_id
+    ).first()
+    if existing_flag:
+        raise HTTPException(status_code=400, detail="You already flagged this report")
+
+    db.add(ReportingFlag(
+        report_id=target_report.id,
+        user_id=reporter_id,
+        reason=report.reason
+    ))
     db.commit()
-    db.refresh(new_report)
-    return new_report
+    db.refresh(target_report)
+    return _serialize_report(db, target_report)
 
 # admin can view all reports
 @router.get("/", response_model=list[ReportOut])

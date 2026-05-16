@@ -101,6 +101,28 @@ def delete_thread(thread_id: int, db: Session = Depends(get_db), current_user: d
     db.commit()
     return {"detail": "Thread deleted successfully"}
 
+
+@router.post("/{thread_id}/like")
+def like_thread(thread_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    thread = db.query(Thread).filter(Thread.id == thread_id).first()
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    thread.likes_count = (thread.likes_count or 0) + 1
+    db.commit()
+    db.refresh(thread)
+    return {"detail": "Thread liked", "likes_count": thread.likes_count}
+
+
+@router.post("/{thread_id}/unlike")
+def unlike_thread(thread_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    thread = db.query(Thread).filter(Thread.id == thread_id).first()
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    thread.likes_count = max(0, (thread.likes_count or 0) - 1)
+    db.commit()
+    db.refresh(thread)
+    return {"detail": "Thread unliked", "likes_count": thread.likes_count}
+
 @router.get("/threads/{thread_id}/comments")
 def get_thread_comments(thread_id: int, db: Session = Depends(get_db)):
     thread = db.query(Thread).filter(Thread.id == thread_id).first()
