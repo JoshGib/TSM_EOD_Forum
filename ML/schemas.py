@@ -15,24 +15,14 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class SectorPerformanceOut(BaseModel):
-    id: int
-    sector_name: str
-    performance_percentage: str
-    is_positive: bool
-
-    class Config:
-        from_attributes = True
-
-
 class FinancialSummaryOut(BaseModel):
     id: int
     report_date: str
     summary_text: str
     market_tone: str
     source_urls: Optional[str] = None
-    created_at: datetime
-    sectors: list[SectorPerformanceOut] = []
+    # Nullable in the actual Supabase table — tolerate rows where it hasn't been populated.
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
