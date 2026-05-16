@@ -181,7 +181,7 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df["overall_article_signal"] = df["overall_article_signal"].str.capitalize()
     df["generated_eod_summary"]  = df["generated_eod_summary"].str.strip()
     df["url_list"] = df["url"].str.split("|")
-    df = df.sort_values("trade_day").reset_index(drop=True)
+    df = df.sort_values("trade_day", ascending=False).reset_index(drop=True)
     return df
 
 def df_to_html(df: pd.DataFrame, total_reports: int) -> str:
