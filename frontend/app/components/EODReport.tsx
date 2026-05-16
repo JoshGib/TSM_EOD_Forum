@@ -251,7 +251,7 @@ export function EODReport() {
                             <div className="text-sm font-medium text-gray-500">{timeStr}</div>
                             <span className="text-xs text-blue-600 font-medium capitalize">{tone}</span>
                           </div>
-                          <p className="text-gray-800">{update.summary_text}</p>
+                          <p className="text-gray-800 whitespace-pre-wrap">{update.summary_text}</p>
                         </div>
                       </div>
                     </a>
