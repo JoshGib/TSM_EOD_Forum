@@ -111,7 +111,7 @@ def load_from_db(limit: int = 5) -> pd.DataFrame:
         rows = (
             db.query(FinancialSummary)
             .order_by(FinancialSummary.report_date.desc())
-            .limit(limit)
+            #.limit(limit)
             .all()
         )
     finally:
