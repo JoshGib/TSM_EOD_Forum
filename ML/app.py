@@ -22,7 +22,7 @@ import pandas as pd
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 from sqlalchemy import (
     Boolean,
@@ -111,7 +111,7 @@ def load_from_db(limit: int = 5) -> pd.DataFrame:
         rows = (
             db.query(FinancialSummary)
             .order_by(FinancialSummary.report_date.desc())
-            #.limit(limit)
+            .limit(limit)
             .all()
         )
     finally:
@@ -321,11 +321,21 @@ def generate():
         "timestamp":    datetime.utcnow().isoformat(),
     }
 
-@app.get("/test_reports.html")
+@app.get("/test_reports.html", response_class=HTMLResponse)
 async def get_report():
-    if os.path.exists(OUTPUT_HTML):
-        return FileResponse(OUTPUT_HTML, media_type="text/html")
-    raise HTTPException(status_code=404, detail="Report not found. Click Generate first.")
+    """
+    Renders the archive HTML fresh from Supabase on every request, so newly
+    inserted rows appear without needing to call POST /generate first.
+    """
+    raw_df = load_from_db(limit=10000)
+    if raw_df.empty:
+        raise HTTPException(
+            status_code=404,
+            detail="No financial summaries found in the database.",
+        )
+    df = clean_dataframe(raw_df)
+    html = df_to_html(df, total_reports=len(df))
+    return HTMLResponse(content=html)
 
 @app.get("/financial-summaries", response_model=List[FinancialSummaryOut])
 def list_financial_summaries(
@@ -339,7 +349,7 @@ def list_financial_summaries(
     rows = (
         db.query(FinancialSummary)
         .order_by(FinancialSummary.report_date.desc())
-        .limit(limit)
+        #.limit(limit)
         .all()
     )
     return rows
