@@ -349,7 +349,7 @@ def list_financial_summaries(
     rows = (
         db.query(FinancialSummary)
         .order_by(FinancialSummary.report_date.desc())
-        #.limit(limit)
+        .limit(limit)
         .all()
     )
     return rows
