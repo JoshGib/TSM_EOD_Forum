@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles, Send, Flag, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles, Send, Flag, ChevronDown, ChevronUp, MoreVertical, Edit2, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 
@@ -67,6 +67,8 @@ const categories = [
   'Strategies',
 ];
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+  
 const fetchThreads = async () => {
   try {
     const response = await fetch(`${API_URL}/threads/`);
@@ -554,7 +556,7 @@ const filteredThreads = forumThreads.filter(t => {
                       <span className="font-medium text-gray-700">{thread.author}</span>
                       <div className="flex items-center space-x-1">
                         <Clock className="w-4 h-4" />
-                        <span>{formatTime(thread.timeAgo)}</span>
+                        <span>{(thread.timeAgo)}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <MessageSquare className="w-4 h-4" />
@@ -617,7 +619,7 @@ const filteredThreads = forumThreads.filter(t => {
                                 <div className="flex items-center space-x-2">
                                   <span className="font-medium text-gray-900 text-sm">{comment.author}</span>
                                   <span className="text-gray-500 text-xs">•</span>
-                                  <span className="text-gray-500 text-xs">{formatTime(comment.timeAgo)}</span>
+                                  <span className="text-gray-500 text-xs">{(comment.timeAgo)}</span>
                                 </div>
                                 <div className="flex items-center space-x-1">
                                   <button
