@@ -75,7 +75,7 @@ export function EODReport() {
   // Pull the most-recent financial summaries from the backend (Supabase via app.py)
   useEffect(() => {
     let cancelled = false;
-    fetch(`${ML_URL}/financial-summaries?limit=4`)
+    fetch(`${ML_URL}/financial-summaries?limit=1`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
