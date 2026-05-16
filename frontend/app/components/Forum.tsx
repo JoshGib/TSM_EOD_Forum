@@ -1,5 +1,7 @@
+'use client'
+
 import { useState, useEffect } from 'react';
-import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles, Send, Flag, ChevronDown, ChevronUp, MoreVertical, Edit2, Trash2 } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles, Send, Flag, ChevronDown, ChevronUp, MoreVertical, Trash2, Edit2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 
@@ -10,7 +12,7 @@ interface Comment {
   content: string;
   likes: number;
   dislikes: number;
-  timeAgo: string;
+  createdAt: string;
   userId?: number;
 }
 
@@ -24,12 +26,16 @@ interface Thread {
   views: number;
   likes: number;
   dislikes: number;
-  timeAgo: string;
+  createdAt: string;
   isPinned?: boolean;
 }
 
 export function Forum() {
   const { user } = useAuth();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
+  console.log("API URL:", API_URL);
+
 
   const [forumThreads, setForumThreads] = useState<Thread[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -67,7 +73,7 @@ const categories = [
   'Strategies',
 ];
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+
   
 const fetchThreads = async () => {
   try {
@@ -87,7 +93,7 @@ const fetchThreads = async () => {
       replies: thread.replies_count ?? 0,
       views: thread.views ?? 0,
       likes: thread.likes_count ?? 0,
-      timeAgo: 'Just now',
+      createdAt: thread.created_at,
       isPinned:false,
     }));
 
@@ -99,23 +105,25 @@ const fetchThreads = async () => {
 
 const fetchComments = async (threadId: number) => {
   try {
-    const response = await fetch('http://localhost:8000/comments/thread/${threadId}');
+    const response = await fetch(`${API_URL}/comments/thread/${threadId}`);
     const data = await response.json();
 
     const formattedComments = data.map((c: any) => ({
       id: c.id,
       threadId: c.thread_id,
       userId: c.user_id,
-      author: c.author_username || 'Unknown',
+      author: c.username || 'Unknown',
       content: c.content,
       likes: c.likes || 0,
-      timeAgo: 'Just now',
+      createdAt: c.created_at,
     }));
 
     setComments(prev =>{
-      const filteredComments = prev.filter(c => c.threadId !== threadId);
-      return [...filteredComments, ...formattedComments];
+      const map = new Map(prev.map(c => [c.id, c]));
+      formattedComments.forEach((c: Comment) => map.set(c.id, c));
+      return Array.from(map.values());
     });
+  
   } catch (error) {
     console.error('Error fetching comments:', error);
   }
@@ -364,6 +372,37 @@ const handleCreateThread = async (e: React.FormEvent) => {
     alert('There was an error creating the thread. Please try again.');
   }
 };
+const formatTime = (dateString: string) => {
+  if (!dateString) return 'Unknown time';
+  const date = new Date(dateString ?? '');
+  if (isNaN(date.getTime())) return 'Unknown time';
+  const now = new Date();
+  
+  let diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  console.log({
+  dateString,
+  parsed: date.toISOString(),
+  now: now.toISOString(),
+  diffSeconds: diffInSeconds,
+});
+  const minutes = Math.floor(diffInSeconds / 60);
+  const hours = Math.floor(diffInSeconds / (60 * 60));
+  const days = Math.floor(diffInSeconds / (60 * 60 * 24));
+
+  if (diffInSeconds < 60) {
+    return 'Just now';
+  } else if (minutes < 60) {
+    return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  } else if (hours < 24) {
+    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  } else if (days < 3) {
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  } else {
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+};
+
 const filteredThreads = forumThreads.filter(t => {
   const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) || t.content.toLowerCase().includes(searchQuery.toLowerCase());
   const matchesCategory = selectedCategory === 'All Categories' || t.category === selectedCategory;
@@ -556,7 +595,7 @@ const filteredThreads = forumThreads.filter(t => {
                       <span className="font-medium text-gray-700">{thread.author}</span>
                       <div className="flex items-center space-x-1">
                         <Clock className="w-4 h-4" />
-                        <span>{(thread.timeAgo)}</span>
+                        <span>{formatTime(thread.createdAt)}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <MessageSquare className="w-4 h-4" />
@@ -572,8 +611,9 @@ const filteredThreads = forumThreads.filter(t => {
                       >
                         <ThumbsUp className="w-4 h-4" />
                         <span>{thread.likes} likes</span>
-                      </button>
-                    </div>
+                        </button>
+                      </div>
+                
 
                     {/* View Comments Button */}
                     <button
@@ -619,7 +659,7 @@ const filteredThreads = forumThreads.filter(t => {
                                 <div className="flex items-center space-x-2">
                                   <span className="font-medium text-gray-900 text-sm">{comment.author}</span>
                                   <span className="text-gray-500 text-xs">•</span>
-                                  <span className="text-gray-500 text-xs">{(comment.timeAgo)}</span>
+                                  <span className="text-gray-500 text-xs">{formatTime(comment.createdAt)}</span>
                                 </div>
                                 <div className="flex items-center space-x-1">
                                   <button

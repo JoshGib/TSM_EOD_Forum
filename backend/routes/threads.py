@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from sqlalchemy import func
 from db import get_db
 from models import Thread, User, Comment
 from schemas import ThreadCreate, ThreadOut
 from auth import get_current_user
+
 
 
 router = APIRouter(prefix="/threads", tags=["threads"])
@@ -38,29 +39,29 @@ def create_thread(thread: ThreadCreate, db: Session = Depends(get_db), current_u
 #get all threads
 @router.get("/", response_model=list[ThreadOut])
 def get_threads(db: Session = Depends(get_db)):
-    threads = db.query(Thread).order_by(Thread.created_at.desc()).all()
-    results = []
-    for thread in threads:
-        user = db.query(User).filter(User.id == thread.user_id).first()
-        replies_count = db.query(Comment).filter(Comment.thread_id == thread.id).count()
-      
-        results.append({
+    comment_counts = db.query(Comment.thread_id, func.count(Comment.id).label("replies_count")).group_by(Comment.thread_id).all()
+    count_map = {thread_id: replies_count for thread_id, replies_count in comment_counts}
+    threads = db.query(Thread, User.username).join(User, Thread.user_id == User.id).order_by(Thread.created_at.desc()).all()
+   
+    return[
+        {
             "id": thread.id,
             "title": thread.title,
             "category": thread.category,
             "content": thread.content,
             "views": thread.views,
             "likes_count": thread.likes_count,
-            "dislikes_count": thread.dislikes_count,
             "is_pinned": thread.is_pinned,
             "is_locked": thread.is_locked,
             "user_id": thread.user_id,
             "created_at": thread.created_at,
-            "author_username": user.username if user else "Unknown",
-            "replies_count": replies_count
-        })
-    return results
+            "author_username": username,
+            "replies_count": count_map.get(thread.id, 0)
+    
 
+        }
+        for thread, username in threads
+    ]
 #get a single thread
 @router.get("/{thread_id}", response_model=ThreadOut)
 def get_thread(thread_id: int, db: Session = Depends(get_db)):
@@ -72,7 +73,7 @@ def get_thread(thread_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(thread)
 
-    user = db.query(User).filter(User.id == thread.user_id).first()
+    user = db.query(User.username).filter(User.id == thread.user_id).first()
     replies_count = db.query(Comment).filter(Comment.thread_id == thread.id).count()
     return {
         **thread.__dict__,

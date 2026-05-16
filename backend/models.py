@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from db import Base
 
 
@@ -30,8 +30,8 @@ class Thread(Base):
     dislikes_count = Column(Integer, default=0)
     is_pinned = Column(Boolean, default=False)
     is_locked = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone = True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     user_id = Column(Integer, ForeignKey('users.id'))
     
     owner = relationship('User', back_populates='threads')
@@ -44,8 +44,8 @@ class Comment(Base):
     likes_count = Column(Integer, default=0)
     dislikes_count = Column(Integer, default=0)
     is_deleted = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     thread_id = Column(Integer, ForeignKey('threads.id'))
     user_id = Column(Integer, ForeignKey('users.id'))
     parent_comment_id = Column(Integer, ForeignKey('comments.id'), nullable=True)
@@ -63,7 +63,7 @@ class Report(Base):
     comment_id = Column(Integer, ForeignKey('comments.id'), nullable=True)
     status = Column(String, default='pending', nullable=False)
     priority = Column(String, default='low')
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
     reporter = relationship('User', foreign_keys=[reporter_id])
@@ -77,8 +77,8 @@ class Blacklist(Base):
     user_id = Column(Integer, ForeignKey('users.id'), unique=True)
     reason = Column(Text, nullable=False)
     is_permanent = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    expires_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    expires_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc) + timedelta(days=7))
     banned_by_admin = Column(Integer, ForeignKey('users.id'))
 
     user = relationship('User', foreign_keys=[user_id], back_populates='bans')
@@ -90,7 +90,7 @@ class ReportingFlag(Base):
     report_id = Column(Integer, ForeignKey('reports.id'))
     user_id = Column(Integer, ForeignKey('users.id'))
     reason = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     report = relationship('Report', back_populates='flags')
     user = relationship('User')
@@ -106,8 +106,7 @@ class FinancialSummary(Base):
     summary_text = Column(Text, nullable=False)
     market_tone = Column(String, nullable=False)
     source_urls = Column(Text, nullable=True)  
-    created_at = Column(DateTime, default=datetime.utcnow)
-
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     sectors = relationship('SectorPerformance', back_populates='summary', cascade='all, delete')    
 
 

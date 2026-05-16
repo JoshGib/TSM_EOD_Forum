@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from db import get_db
 from models import Comment, User, Thread
 from schemas import CommentCreate, CommentOut
 from auth import get_current_user
+from datetime import datetime
 
 router = APIRouter(prefix="/comments", tags=["comments"])
 
@@ -52,7 +53,7 @@ def get_comments_for_thread(thread_id: int, db: Session = Depends(get_db)):
     thread = db.query(Thread).filter(Thread.id == thread_id).first()
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
-    comments = db.query(Comment).filter(Comment.thread_id == thread_id).order_by(Comment.created_at.desc()).all()
+    comments = db.query(Comment).options(joinedload(Comment.user)).filter(Comment.thread_id == thread_id).order_by(Comment.created_at.desc()).all()
     result = []
     for comment in comments:
         result.append({
@@ -60,7 +61,7 @@ def get_comments_for_thread(thread_id: int, db: Session = Depends(get_db)):
             "content": comment.content,
             "thread_id": comment.thread_id,
             "parent_comment_id": comment.parent_comment_id,
-            "created_at": comment.created_at,
+            "created_at": comment.created_at or datetime.utcnow(),
             "user_id": comment.user_id,
             "username": comment.user.username if comment.user else "Unknown",
             "replies": []
@@ -73,8 +74,17 @@ def get_replies_for_comment(comment_id: int, db: Session = Depends(get_db)):
     parent_comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not parent_comment:
         raise HTTPException(status_code=404, detail="Comment not found")
-    replies = db.query(Comment).filter(Comment.parent_comment_id == comment_id).all()
-    return replies
+    replies = db.query(Comment).options(joinedload(Comment.user)).filter(Comment.parent_comment_id == comment_id).all()
+    return [{
+        "id": reply.id,
+        "content": reply.content,
+        "thread_id": reply.thread_id,
+        "parent_comment_id": reply.parent_comment_id,
+        "created_at": reply.created_at or datetime.utcnow(),
+        "user_id": reply.user_id,
+        "username": reply.user.username if reply.user else "Unknown",
+        "replies": []
+    } for reply in replies]
 
 #delete a comment
 @router.delete("/{comment_id}")
