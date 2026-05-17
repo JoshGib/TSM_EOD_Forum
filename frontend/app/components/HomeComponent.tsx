@@ -153,7 +153,7 @@ export function HomeComponent() {
           Empowering First-Time Investors with Accessible Financial Information
         </p>
         <p className="text-blue-100 mb-6 max-w-2xl">
-          Get daily market insights summarized from The Wall Street Journal, participate in structured discussions, and connect with a community of learners—all in one place.
+          Get daily market insights through our summarization model, participate in structured discussions, and connect with a community of learners—all in one place.
         </p>
         <div className="flex flex-wrap gap-3">
           <a
