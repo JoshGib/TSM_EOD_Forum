@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"
 const ML_URL = process.env.NEXT_PUBLIC_ML_URL ?? 'https://tsmforumfeed-yeww6.ondigitalocean.app/group-3---main-ml';
 
 interface SectorPerformance {
