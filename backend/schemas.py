@@ -134,14 +134,6 @@ class AdminReportOut(BaseModel):
         from_attributes = True
 #Financial summary schemas
 
-class SectorPerformanceOut(BaseModel):
-    id: int
-    sector_name: str
-    performance_percentage: str
-    is_positive: bool 
-    class Config:
-        from_attributes = True
-
 class FinancialSummaryCreate(BaseModel):
     report_date: str
     summary_text: str
@@ -156,6 +148,24 @@ class FinancialSummaryOut(BaseModel):
     source_urls: Optional[str] = None
     created_at: datetime
     sectors: list[SectorPerformanceOut] = []
+
+    class Config:
+        from_attributes = True
+
+class SectorPerformanceCreate(BaseModel):
+    report_date: str
+    summary_text: str
+    market_tone: str
+    source_urls: Optional[str] = None
+    sector_name: str
+
+class SectorPerformanceOut(BaseModel):
+    id: int
+    report_date: str
+    summary_text: str
+    source_urls: Optional[str] = None
+    created_at: datetime
+    sector_name: str
 
     class Config:
         from_attributes = True
