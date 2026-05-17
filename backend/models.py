@@ -107,14 +107,14 @@ class FinancialSummary(Base):
     market_tone = Column(String, nullable=False)
     source_urls = Column(Text, nullable=True)  
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    sectors = relationship('SectorPerformance', back_populates='summary', cascade='all, delete')    
+    
 
 
 class SectorPerformance(Base):
     __tablename__ = 'sector_performance'
     id = Column(Integer, primary_key=True, index=True)
-    summary_id = Column(Integer, ForeignKey('financial_summaries.id'))
+    report_date = Column(String, unique=True, nullable=False)
+    summary_text = Column(Text, nullable=False)
+    source_urls = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     sector_name = Column(String, nullable=False)
-    is_positive = Column(Boolean, nullable=False)
-
-    summary = relationship('FinancialSummary', back_populates='sectors')

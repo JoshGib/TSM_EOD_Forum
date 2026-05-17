@@ -7,9 +7,12 @@ from db import Base
 
 
 from alembic import context
+from dotenv import load_dotenv
 
 import models
+import os
 
+load_dotenv()
 
 target_metadata = Base.metadata
 # this is the Alembic Config object, which provides
@@ -21,6 +24,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
@@ -64,8 +68,7 @@ def run_migrations_online() -> None:
 
     """
     connectable = engine_from_config(
-        config.set_section("sqlalchemy.url", os.getenv("DATABASE_URL"))
-    )
+        config.get_section(config.config_ini_section), prefix="sqlalchemy.", poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(
