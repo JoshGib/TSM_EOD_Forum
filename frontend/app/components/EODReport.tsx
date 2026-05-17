@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, BarChart3, Calendar, Play, Pause, ExternalLink, MessageSquare, Sparkles } from 'lucide-react';
+import { BarChart3, Calendar, MessageSquare, Newspaper, TrendingDown, TrendingUp } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
-const ML_URL  = process.env.NEXT_PUBLIC_ML_URL ?? '';
+const ML_URL = process.env.NEXT_PUBLIC_ML_URL ?? 'https://tsmforumfeed-yeww6.ondigitalocean.app/group-3---main-ml';
 
-// Matches schemas.FinancialSummaryOut on the backend
 interface SectorPerformance {
   id: number;
   sector_name: string;
@@ -24,55 +24,118 @@ interface FinancialSummary {
   sectors: SectorPerformance[];
 }
 
-const eodData = {
-  date: 'February 25, 2026',
-  marketSummary: {
-    sp500: { value: 5247.81, change: 64.12, percent: 1.24 },
-    dow: { value: 43892.55, change: 378.45, percent: 0.87 },
-    nasdaq: { value: 16421.33, change: -71.24, percent: -0.43 },
-  },
-  topGainers: [
-    { symbol: 'NVDA', name: 'NVIDIA Corp', price: 782.45, change: 8.67 },
-    { symbol: 'TSLA', name: 'Tesla Inc', price: 245.78, change: 6.23 },
-    { symbol: 'AMD', name: 'Advanced Micro Devices', price: 167.89, change: 5.45 },
-  ],
-  topLosers: [
-    { symbol: 'META', name: 'Meta Platforms', price: 412.34, change: -4.12 },
-    { symbol: 'NFLX', name: 'Netflix Inc', price: 567.23, change: -3.89 },
-    { symbol: 'GOOGL', name: 'Alphabet Inc', price: 156.78, change: -2.67 },
-  ],
-  sectorPerformance: [
-    { name: 'Technology', change: 1.45, isPositive: true },
-    { name: 'Healthcare', change: 0.89, isPositive: true },
-    { name: 'Financials', change: 0.67, isPositive: true },
-    { name: 'Energy', change: -0.34, isPositive: false },
-    { name: 'Consumer Discretionary', change: -0.78, isPositive: false },
-  ],
-};
+interface IndexQuote {
+  value: number;
+  change: number;
+  percent: number;
+}
 
-const articleSources = [
-  {
-    title: 'Stocks Rise as Tech Rally Continues',
-    source: 'Wall Street Journal',
-    link: 'https://www.wsj.com',
-  },
-  {
-    title: 'Fed Signals Steady Interest Rate Policy',
-    source: 'Wall Street Journal',
-    link: 'https://www.wsj.com',
-  },
-  {
-    title: 'Energy Sector Faces Headwinds',
-    source: 'Wall Street Journal',
-    link: 'https://www.wsj.com',
-  },
+interface StockMover {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+}
+
+interface SectorRow {
+  name: string;
+  change: number;
+  isPositive: boolean;
+}
+
+interface MarketData {
+  marketSummary: {
+    sp500?: IndexQuote;
+    dow?: IndexQuote;
+    nasdaq?: IndexQuote;
+  };
+  topGainers: StockMover[];
+  topLosers: StockMover[];
+  sectorPerformance: SectorRow[];
+}
+
+const INDEX_CARDS = [
+  { key: 'sp500' as const, label: 'S&P 500' },
+  { key: 'dow' as const, label: 'Dow Jones' },
+  { key: 'nasdaq' as const, label: 'NASDAQ' },
 ];
 
-export function EODReport() {
-  const [liveUpdates, setLiveUpdates] = useState<FinancialSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+function formatChange(value: number, isPercent = false): string {
+  const prefix = value >= 0 ? '+' : '';
+  const formatted = isPercent
+    ? value.toFixed(2)
+    : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return `${prefix}${formatted}`;
+}
 
-  // Pull the most-recent financial summaries from the backend (Supabase via app.py)
+function splitSummary(summaryText: string, reportDate?: string): { title: string; body: string } {
+  const trimmed = summaryText.trim();
+  const match = trimmed.match(/^([^.!?\n]+[.!?]?)(?:\s+([\s\S]+))?$/);
+  const firstSentence = match?.[1]?.trim();
+  const remainder = match?.[2]?.trim();
+
+  if (firstSentence && firstSentence.length <= 100) {
+    return {
+      title: firstSentence,
+      body: remainder || '',
+    };
+  }
+
+  const fallbackTitle = reportDate
+    ? `Market Close · ${formatReportDateStatic(reportDate)}`
+    : "Today's Market Close";
+  return { title: fallbackTitle, body: trimmed };
+}
+
+function formatReportDateStatic(isoDate: string): string {
+  const source = new Date(`${isoDate}T12:00:00`);
+  return source.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'America/New_York',
+  });
+}
+
+function getToneStyle(tone: string): {
+  label: string;
+  Icon: LucideIcon;
+  badge: string;
+  iconWrap: string;
+} {
+  const t = tone.toLowerCase();
+  if (t.includes('bull')) {
+    return {
+      label: tone,
+      Icon: TrendingUp,
+      badge: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+      iconWrap: 'bg-emerald-100 text-emerald-600',
+    };
+  }
+  if (t.includes('bear')) {
+    return {
+      label: tone,
+      Icon: TrendingDown,
+      badge: 'bg-red-50 text-red-700 ring-red-600/20',
+      iconWrap: 'bg-red-100 text-red-600',
+    };
+  }
+  return {
+    label: tone,
+    Icon: BarChart3,
+    badge: 'bg-blue-50 text-blue-700 ring-blue-600/20',
+    iconWrap: 'bg-blue-100 text-blue-600',
+  };
+}
+
+export function EODReport() {
+  const router = useRouter();
+  const [liveUpdates, setLiveUpdates] = useState<FinancialSummary[]>([]);
+  const [marketData, setMarketData] = useState<MarketData | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+  const [loadingMarket, setLoadingMarket] = useState(true);
+  const [isPostingToForum, setIsPostingToForum] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     fetch(`${ML_URL}/financial-summaries?limit=1`)
@@ -87,35 +150,96 @@ export function EODReport() {
         console.error('Failed to load financial summaries:', err);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setLoadingSummary(false);
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // Format the row's created_at into the existing '16:00 EST' look
-  const formatTime = (iso: string): string => {
-    try {
-      const d = new Date(iso);
-      const hhmm = d.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-        timeZone: 'America/New_York',
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/market-data')
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data: MarketData) => {
+        if (!cancelled) setMarketData(data);
+      })
+      .catch((err) => {
+        console.error('Failed to load market data:', err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMarket(false);
       });
-      return `${hhmm} EST`;
-    } catch {
-      return iso;
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const formatReportDate = (isoDate?: string) =>
+    isoDate ? formatReportDateStatic(isoDate) : formatReportDateStatic(new Date().toISOString().slice(0, 10));
+
+  const reportsArchiveHref = `${ML_URL}/test_reports.html`;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+
+  const handleDiscussInForum = async () => {
+    if (isPostingToForum) return;
+    const latest = liveUpdates[0];
+    if (!latest) {
+      router.push('/forum');
+      return;
+    }
+
+    const token = localStorage.getItem('token') || localStorage.getItem('Token');
+    if (!token) {
+      alert('Please log in to create a forum discussion.');
+      router.push('/login');
+      return;
+    }
+
+    const summaryText = latest.summary_text?.trim() || 'Daily market summary';
+    const { title, body } = splitSummary(summaryText, latest.report_date);
+
+    setIsPostingToForum(true);
+    try {
+      const response = await fetch(`${API_URL}/threads/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: title || `EOD Discussion - ${formatReportDate(latest.report_date)}`,
+          category: 'EOD Discussion',
+          content: body || summaryText,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.detail || 'Failed to create discussion thread');
+      }
+      router.push('/forum');
+    } catch (error) {
+      console.error('Error creating forum thread:', error);
+      alert(error instanceof Error ? error.message : 'Failed to create discussion thread');
+    } finally {
+      setIsPostingToForum(false);
     }
   };
 
-  // Each card opens the backend-rendered archive (top 5 from DB)
-  const reportsArchiveHref = `${ML_URL}/test_reports.html`;
+  const sectors =
+    liveUpdates[0]?.sectors?.length
+      ? liveUpdates[0].sectors.map((s) => ({
+          name: s.sector_name,
+          change: Math.abs(parseFloat(s.performance_percentage) || 0),
+          isPositive: s.is_positive,
+        }))
+      : marketData?.sectorPerformance ?? [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
           <div>
@@ -129,85 +253,55 @@ export function EODReport() {
             </p>
             <div className="flex items-center space-x-2 text-gray-600">
               <Calendar className="w-5 h-5" />
-              <span>{eodData.date}</span>
+              <span>
+                {loadingSummary ? '…' : formatReportDate(liveUpdates[0]?.report_date)}
+              </span>
             </div>
           </div>
-          <div className="mt-4 sm:mt-0">
-
-          </div>
         </div>
-
-        {/* Info Banner */}
-        {/* <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start space-x-3">
-          <BarChart3 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm text-blue-900">
-              This report is automatically generated by analyzing and summarizing articles from The Wall Street Journal.
-              Use this information as a starting point for discussion in our community forum.
-            </p>
-          </div>
-        </div> */}
       </div>
 
       {/* Market Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-700">S&P 500</h3>
-            <TrendingUp className="w-5 h-5 text-green-600" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900 mb-2">
-            {eodData.marketSummary.sp500.value.toLocaleString()}
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-green-600 font-medium">
-              +{eodData.marketSummary.sp500.change}
-            </span>
-            <span className="text-green-600 font-medium">
-              ({eodData.marketSummary.sp500.percent}%)
-            </span>
-          </div>
-        </div>
+        {INDEX_CARDS.map(({ key, label }) => {
+          const quote = marketData?.marketSummary[key];
+          const isPositive = (quote?.change ?? 0) >= 0;
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-700">Dow Jones</h3>
-            <TrendingUp className="w-5 h-5 text-green-600" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900 mb-2">
-            {eodData.marketSummary.dow.value.toLocaleString()}
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-green-600 font-medium">
-              +{eodData.marketSummary.dow.change}
-            </span>
-            <span className="text-green-600 font-medium">
-              ({eodData.marketSummary.dow.percent}%)
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-700">NASDAQ</h3>
-            <TrendingDown className="w-5 h-5 text-red-600" />
-          </div>
-          <div className="text-3xl font-bold text-gray-900 mb-2">
-            {eodData.marketSummary.nasdaq.value.toLocaleString()}
-          </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-red-600 font-medium">
-              {eodData.marketSummary.nasdaq.change}
-            </span>
-            <span className="text-red-600 font-medium">
-              ({eodData.marketSummary.nasdaq.percent}%)
-            </span>
-          </div>
-        </div>
+          return (
+            <div key={key} className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-700">{label}</h3>
+                {loadingMarket ? null : isPositive ? (
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                ) : (
+                  <TrendingDown className="w-5 h-5 text-red-600" />
+                )}
+              </div>
+              {loadingMarket ? (
+                <p className="text-gray-500 text-sm">Loading…</p>
+              ) : quote ? (
+                <>
+                  <div className="text-3xl font-bold text-gray-900 mb-2">
+                    {quote.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatChange(quote.change)}
+                    </span>
+                    <span className={`font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                      ({formatChange(quote.percent, true)}%)
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-gray-500 text-sm">Unavailable</p>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Live Updates Stream */}
         <div className="lg:col-span-2 space-y-6">
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -215,43 +309,59 @@ export function EODReport() {
                 <BarChart3 className="w-6 h-6 text-gray-700" />
                 <h2 className="text-2xl font-bold text-gray-900">End of Day Summary</h2>
               </div>
-              <a
-                href="/forum"
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              <button
+                type="button"
+                onClick={handleDiscussInForum}
+                disabled={isPostingToForum || loadingSummary || liveUpdates.length === 0}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <MessageSquare className="w-4 h-4" />
-                <span>Discuss in Forum</span>
-              </a>
+                <span>{isPostingToForum ? 'Posting…' : 'Discuss in Forum'}</span>
+              </button>
             </div>
             <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-200">
-              {loading ? (
+              {loadingSummary ? (
                 <p className="p-6 text-gray-500 text-sm">Loading latest updates…</p>
               ) : liveUpdates.length === 0 ? (
                 <p className="p-6 text-gray-500 text-sm">No updates available right now.</p>
               ) : (
                 liveUpdates.map((update) => {
-                  const timeStr = formatTime(update.created_at);
-                  const tone = update.market_tone || 'Neutral';
+                  const tone = getToneStyle(update.market_tone || 'Neutral');
+                  const { title, body } = splitSummary(update.summary_text, update.report_date);
+                  const dateLabel = formatReportDate(update.report_date);
+                  const ToneIcon = tone.Icon;
                   return (
                     <a
                       key={update.id}
                       href={reportsArchiveHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block p-6 hover:bg-gray-50 transition-colors"
+                      className="block p-6 hover:bg-gray-50 transition-colors group"
                     >
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0">
-                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-semibold text-sm">{timeStr.split(':')[0]}:{timeStr.split(':')[1].split(' ')[0]}</span>
+                      <div className="flex items-start gap-4">
+                        <div className="shrink-0">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tone.iconWrap}`}>
+                            <Newspaper className="w-6 h-6" />
                           </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="text-sm font-medium text-gray-500">{timeStr}</div>
-                            <span className="text-xs text-blue-600 font-medium capitalize">{tone}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ring-1 ring-inset ${tone.badge}`}
+                            >
+                              <ToneIcon className="w-3.5 h-3.5" />
+                              {tone.label}
+                            </span>
+                            <span className="text-xs text-gray-500">{dateLabel}</span>
                           </div>
-                          <p className="text-gray-800 whitespace-pre-wrap">{update.summary_text}</p>
+                          <h3 className="text-lg font-semibold text-gray-900 leading-snug mb-3 group-hover:text-blue-700 transition-colors">
+                            {title}
+                          </h3>
+                          {body ? (
+                            <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
+                              {body}
+                            </p>
+                          ) : null}
                         </div>
                       </div>
                     </a>
@@ -261,104 +371,97 @@ export function EODReport() {
             </div>
           </div>
 
-          {/* Source Articles */}
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Source Articles</h2>
-            <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-200">
-              {articleSources.map((article, index) => (
-                <a
-                  key={index}
-                  href={article.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-1">{article.title}</h3>
-                      <p className="text-sm text-gray-600">{article.source}</p>
-                    </div>
-                    <ExternalLink className="w-5 h-5 text-gray-400 flex-shrink-0 ml-3" />
-                  </div>
-                </a>
-              ))}
-            </div>
-            <p className="text-xs text-gray-500 mt-3">
-              Click to read the full articles on The Wall Street Journal website
-            </p>
-          </div>
-
           {/* Sector Performance */}
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Sector Performance</h2>
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="space-y-4">
-                {eodData.sectorPerformance.map((sector, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <span className="text-gray-700 font-medium">{sector.name}</span>
-                    <div className="flex items-center space-x-2">
-                      {sector.isPositive ? (
-                        <>
-                          <TrendingUp className="w-4 h-4 text-green-600" />
-                          <span className="text-green-600 font-semibold">+{sector.change}%</span>
-                        </>
-                      ) : (
-                        <>
-                          <TrendingDown className="w-4 h-4 text-red-600" />
-                          <span className="text-red-600 font-semibold">{sector.change}%</span>
-                        </>
-                      )}
+              {loadingMarket && !liveUpdates[0]?.sectors?.length ? (
+                <p className="text-gray-500 text-sm">Loading sector data…</p>
+              ) : sectors.length === 0 ? (
+                <p className="text-gray-500 text-sm">Sector data unavailable.</p>
+              ) : (
+                <div className="space-y-4">
+                  {sectors.map((sector, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-gray-700 font-medium">{sector.name}</span>
+                      <div className="flex items-center space-x-2">
+                        {sector.isPositive ? (
+                          <>
+                            <TrendingUp className="w-4 h-4 text-green-600" />
+                            <span className="text-green-600 font-semibold">+{sector.change}%</span>
+                          </>
+                        ) : (
+                          <>
+                            <TrendingDown className="w-4 h-4 text-red-600" />
+                            <span className="text-red-600 font-semibold">-{sector.change}%</span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Top Gainers */}
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-4">Top Gainers</h2>
             <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-200">
-              {eodData.topGainers.map((stock, index) => (
-                <div key={index} className="p-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <div>
-                      <div className="font-semibold text-gray-900">{stock.symbol}</div>
-                      <div className="text-xs text-gray-500">{stock.name}</div>
+              {loadingMarket ? (
+                <p className="p-4 text-gray-500 text-sm">Loading…</p>
+              ) : (marketData?.topGainers ?? []).length === 0 ? (
+                <p className="p-4 text-gray-500 text-sm">No data available.</p>
+              ) : (
+                marketData!.topGainers.map((stock) => (
+                  <div key={stock.symbol} className="p-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <div>
+                        <div className="font-semibold text-gray-900">{stock.symbol}</div>
+                        <div className="text-xs text-gray-500">{stock.name}</div>
+                      </div>
+                      <TrendingUp className="w-5 h-5 text-green-600" />
                     </div>
-                    <TrendingUp className="w-5 h-5 text-green-600" />
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-gray-900 font-medium">${stock.price.toLocaleString()}</span>
+                      <span className="text-green-600 font-semibold">
+                        {formatChange(stock.change, true)}%
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-gray-900 font-medium">${stock.price}</span>
-                    <span className="text-green-600 font-semibold">+{stock.change}%</span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
-          {/* Top Losers */}
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-4">Top Losers</h2>
             <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-200">
-              {eodData.topLosers.map((stock, index) => (
-                <div key={index} className="p-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <div>
-                      <div className="font-semibold text-gray-900">{stock.symbol}</div>
-                      <div className="text-xs text-gray-500">{stock.name}</div>
+              {loadingMarket ? (
+                <p className="p-4 text-gray-500 text-sm">Loading…</p>
+              ) : (marketData?.topLosers ?? []).length === 0 ? (
+                <p className="p-4 text-gray-500 text-sm">No data available.</p>
+              ) : (
+                marketData!.topLosers.map((stock) => (
+                  <div key={stock.symbol} className="p-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <div>
+                        <div className="font-semibold text-gray-900">{stock.symbol}</div>
+                        <div className="text-xs text-gray-500">{stock.name}</div>
+                      </div>
+                      <TrendingDown className="w-5 h-5 text-red-600" />
                     </div>
-                    <TrendingDown className="w-5 h-5 text-red-600" />
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-gray-900 font-medium">${stock.price.toLocaleString()}</span>
+                      <span className="text-red-600 font-semibold">
+                        {formatChange(stock.change, true)}%
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-gray-900 font-medium">${stock.price}</span>
-                    <span className="text-red-600 font-semibold">{stock.change}%</span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>

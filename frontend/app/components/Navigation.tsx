@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, FileText, TrendingUp, MessageSquare, LogOut, Menu, X, Search, Loader2, Shield, UserCircle } from 'lucide-react';
+import { Home, FileText, TrendingUp, MessageSquare, LogOut, Menu, X, Search, Loader2, Shield, UserCircle, ChevronDown } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from "../contexts/AuthContext";
 
@@ -22,7 +22,9 @@ export function Navigation() {
   const [suggestions, setSuggestions] = useState<StockSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch stock suggestions from local API proxy
@@ -94,6 +96,9 @@ export function Navigation() {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
       }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -111,7 +116,6 @@ export function Navigation() {
     { to: '/rules', label: 'Rules', icon: FileText },
     { to: '/eod-report', label: 'EOD Report', icon: TrendingUp },
     { to: '/forum', label: 'Forum', icon: MessageSquare },
-    ...(isAuthenticated ? [{ to: '/profile', label: 'Profile', icon: UserCircle }] : []),
   ];
 
   // Add admin link for admin users
@@ -196,19 +200,39 @@ export function Navigation() {
               {isAuthenticated ? (
                 <>
                   <div className="hidden md:flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">
-                        {user?.name?.charAt(0)?.toUpperCase()||'?'}
-                      </span>
+                    <div className="relative" ref={userMenuRef}>
+                      <button
+                        onClick={() => setUserMenuOpen((prev) => !prev)}
+                        className="flex items-center space-x-3 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-medium">
+                            {user?.name?.charAt(0)?.toUpperCase()||'?'}
+                          </span>
+                        </div>
+                        <span className="text-sm text-gray-700">{user?.name}</span>
+                        <ChevronDown className="w-4 h-4 text-gray-500" />
+                      </button>
+                      {userMenuOpen && (
+                        <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
+                          <Link
+                            href="/profile"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            <UserCircle className="w-4 h-4" />
+                            <span>Profile</span>
+                          </Link>
+                          <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span>Logout</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-sm text-gray-700">{user?.name}</span>
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center space-x-1 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
-                    </button>
                   </div>
                 </>
               ) : (
@@ -320,6 +344,14 @@ export function Navigation() {
                   </div>
                   <span className="text-sm text-gray-700">{user?.name}</span>
                 </div>
+                <Link
+                  href="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center space-x-3 w-full px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <UserCircle className="w-5 h-5" />
+                  <span>Profile</span>
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="flex items-center space-x-3 w-full px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"

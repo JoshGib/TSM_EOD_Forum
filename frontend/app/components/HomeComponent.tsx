@@ -1,7 +1,37 @@
 'use client';
-import { TrendingUp, TrendingDown, DollarSign, Activity, ExternalLink, BookOpen, Lightbulb, Users, BarChart } from 'lucide-react';
+import { BarChart, BookOpen, ExternalLink, Lightbulb, TrendingDown, TrendingUp, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+
+interface IndexQuote {
+  value: number;
+  change: number;
+  percent: number;
+}
+
+interface MarketData {
+  marketSummary: {
+    sp500?: IndexQuote;
+    dow?: IndexQuote;
+    nasdaq?: IndexQuote;
+  };
+}
+
+const INDEX_CARDS = [
+  { key: 'sp500' as const, label: 'S&P 500' },
+  { key: 'dow' as const, label: 'Dow Jones' },
+  { key: 'nasdaq' as const, label: 'NASDAQ' },
+];
+
+function formatChange(value: number, isPercent = false): string {
+  const prefix = value >= 0 ? '+' : '';
+  const formatted = isPercent
+    ? value.toFixed(2)
+    : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return `${prefix}${formatted}`;
+}
+
 const marketNews = [
   {
     id: 1,
@@ -66,15 +96,39 @@ const tradingApps = [
 
 export function HomeComponent() {
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
+  const [marketData, setMarketData] = useState<MarketData | null>(null);
+  const [loadingMarket, setLoadingMarket] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/market-data')
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data: MarketData) => {
+        if (!cancelled) setMarketData(data);
+      })
+      .catch((err) => {
+        console.error('Failed to load market data:', err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMarket(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleJoinDiscussion = () => {
     if (!user) {
       router.push('/login?redirect=/forum');
-    }
-    else{
+    } else {
       router.push('/forum');
     }
   };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Hero Section */}
@@ -134,54 +188,45 @@ export function HomeComponent() {
       </div>
 
       {/* Market Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">S&P 500</span>
-            <TrendingUp className="w-5 h-5 text-green-600" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900 mb-1">5,247.81</div>
-          <div className="flex items-center text-sm">
-            <span className="text-green-600 font-medium">+1.24%</span>
-            <span className="text-gray-500 ml-2">+64.12</span>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        {INDEX_CARDS.map(({ key, label }) => {
+          const quote = marketData?.marketSummary[key];
+          const isPositive = (quote?.change ?? 0) >= 0;
 
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">Dow Jones</span>
-            <TrendingUp className="w-5 h-5 text-green-600" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900 mb-1">43,892.55</div>
-          <div className="flex items-center text-sm">
-            <span className="text-green-600 font-medium">+0.87%</span>
-            <span className="text-gray-500 ml-2">+378.45</span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">NASDAQ</span>
-            <TrendingDown className="w-5 h-5 text-red-600" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900 mb-1">16,421.33</div>
-          <div className="flex items-center text-sm">
-            <span className="text-red-600 font-medium">-0.43%</span>
-            <span className="text-gray-500 ml-2">-71.24</span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600">VIX</span>
-            <Activity className="w-5 h-5 text-blue-600" />
-          </div>
-          <div className="text-2xl font-bold text-gray-900 mb-1">14.32</div>
-          <div className="flex items-center text-sm">
-            <span className="text-gray-600 font-medium">-2.15%</span>
-            <span className="text-gray-500 ml-2">Low volatility</span>
-          </div>
-        </div>
+          return (
+            <div key={key} className="bg-white rounded-xl p-6 border border-gray-200">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">{label}</span>
+                {loadingMarket ? null : isPositive ? (
+                  <TrendingUp className="w-5 h-5 text-green-600" />
+                ) : (
+                  <TrendingDown className="w-5 h-5 text-red-600" />
+                )}
+              </div>
+              {loadingMarket ? (
+                <p className="text-gray-500 text-sm">Loading…</p>
+              ) : quote ? (
+                <>
+                  <div className="text-2xl font-bold text-gray-900 mb-1">
+                    {quote.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <span
+                      className={`font-medium ${
+                        isPositive ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {formatChange(quote.percent, true)}%
+                    </span>
+                    <span className="text-gray-500 ml-2">{formatChange(quote.change)}</span>
+                  </div>
+                </>
+              ) : (
+                <p className="text-gray-500 text-sm">Unavailable</p>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -231,7 +276,6 @@ export function HomeComponent() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Getting Started */}
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-4">New to Investing?</h2>
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
@@ -250,7 +294,6 @@ export function HomeComponent() {
             </div>
           </div>
 
-          {/* Trading Apps */}
           <div id="trading-apps">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Trading Apps</h2>
             <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-200">
@@ -267,14 +310,13 @@ export function HomeComponent() {
                       <h3 className="font-semibold text-gray-900 mb-1">{app.name}</h3>
                       <p className="text-sm text-gray-600">{app.description}</p>
                     </div>
-                    <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1 ml-2" />
+                    <ExternalLink className="w-4 h-4 text-gray-400 shrink-0 mt-1 ml-2" />
                   </div>
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Quick Resources */}
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-4">Educational Resources</h2>
             <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">

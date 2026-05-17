@@ -29,6 +29,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
+  updateUserProfile: (updates: Partial<User>) => void;
   logout: () => void;
   isAuthenticated: boolean;
   loading: boolean;
@@ -65,20 +66,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ username: name, email, password }),
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       setError(data.detail || 'Signup failed');
       return;
     }
 
+    // Backend signup currently returns a status message only,
+    // so perform login immediately to hydrate full user + token.
+    const loginRes = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const loginData = await loginRes.json().catch(() => ({}));
+    if (!loginRes.ok) {
+      setError(loginData.detail || 'Signup succeeded but auto-login failed');
+      return;
+    }
+
     const userData: User = {
-      id: data.id,
-      email: data.email,
-      name: data.username,
-      role: data.role || 'user',
+      id: loginData.user.id || '',
+      email: loginData.user.email || email,
+      name: loginData.user.username || name,
+      role: loginData.user.role || 'user',
+      isAdmin: loginData.user.role === 'admin',
     };
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('token', loginData.access_token);
   };
 
 
@@ -148,11 +164,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('Token');
   };
 
+  const updateUserProfile = (updates: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const merged = { ...prev, ...updates };
+      localStorage.setItem('user', JSON.stringify(merged));
+      return merged;
+    });
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
       login,
       signup,
+      updateUserProfile,
       logout,
       isAuthenticated: !!user,
       loading,

@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 function ProfilePageContent() {
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('');
@@ -58,13 +58,9 @@ function ProfilePageContent() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Failed to update username');
       setUsername(data.username);
+      setNewUsername(data.username);
+      updateUserProfile({ name: data.username });
       setMessage('Username updated successfully.');
-      const stored = localStorage.getItem('user');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        parsed.name = data.username;
-        localStorage.setItem('user', JSON.stringify(parsed));
-      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to update username');
     }

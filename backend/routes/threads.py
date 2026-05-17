@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from pydantic import BaseModel
 from db import get_db
 from models import Thread, User, Comment
 from schemas import ThreadCreate, ThreadOut
@@ -9,6 +10,12 @@ from auth import get_current_user
 
 
 router = APIRouter(prefix="/threads", tags=["threads"])
+
+
+class ThreadUpdate(BaseModel):
+    title: str
+    content: str
+    category: str | None = None
 
 
 #cretae a thread
@@ -100,6 +107,32 @@ def delete_thread(thread_id: int, db: Session = Depends(get_db), current_user: d
     db.delete(thread)
     db.commit()
     return {"detail": "Thread deleted successfully"}
+
+
+@router.put("/{thread_id}")
+def update_thread(
+    thread_id: int,
+    payload: ThreadUpdate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    user_id = current_user.get("user_id")
+    user_role = current_user.get("role")
+
+    thread = db.query(Thread).filter(Thread.id == thread_id).first()
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+
+    if thread.user_id != user_id and user_role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to edit this thread")
+
+    thread.title = payload.title
+    if payload.category is not None:
+        thread.category = payload.category
+    thread.content = payload.content
+    db.commit()
+    db.refresh(thread)
+    return {"detail": "Thread updated successfully"}
 
 
 @router.post("/{thread_id}/like")
