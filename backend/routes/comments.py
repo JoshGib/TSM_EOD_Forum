@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 from db import get_db
 from models import Comment, User, Thread
-from schemas import CommentCreate, CommentOut
+from schemas import CommentCreate, CommentOut, CommentUpdate
 from auth import get_current_user
 from datetime import datetime
 
@@ -85,6 +85,29 @@ def get_replies_for_comment(comment_id: int, db: Session = Depends(get_db)):
         "username": reply.user.username if reply.user else "Unknown",
         "replies": []
     } for reply in replies]
+
+#delete a comment
+@router.put("/{comment_id}")
+def update_comment(comment_id: int, payload: CommentUpdate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    user_id = current_user.get("user_id")
+    user_role = current_user.get("role")
+
+    comment = db.query(Comment).filter(Comment.id == comment_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+
+    if comment.user_id != user_id and user_role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to edit this comment")
+
+    new_content = payload.content.strip()
+    if not new_content:
+        raise HTTPException(status_code=400, detail="Content cannot be empty")
+
+    comment.content = new_content
+    db.commit()
+    db.refresh(comment)
+
+    return {"detail": "Comment updated successfully"}
 
 #delete a comment
 @router.delete("/{comment_id}")

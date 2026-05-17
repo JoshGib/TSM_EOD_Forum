@@ -17,6 +17,15 @@ interface MarketData {
     nasdaq?: IndexQuote;
   };
 }
+interface InsightItem {
+  id: string;
+  title: string;
+  source: string;
+  time: string;
+  summary: string;
+  link: string;
+  category: string;
+}
 
 const INDEX_CARDS = [
   { key: 'sp500' as const, label: 'S&P 500' },
@@ -32,44 +41,6 @@ function formatChange(value: number, isPercent = false): string {
   return `${prefix}${formatted}`;
 }
 
-const marketNews = [
-  {
-    id: 1,
-    title: 'Market Volatility: What First-Time Investors Need to Know',
-    source: 'Wall Street Journal',
-    time: '2 hours ago',
-    summary: 'Understanding market fluctuations is key to long-term investing success. Learn how to navigate uncertainty and make informed decisions.',
-    link: 'https://www.wsj.com',
-    category: 'Education',
-  },
-  {
-    id: 2,
-    title: 'Tech Sector Shows Strong Gains Amid Economic Optimism',
-    source: 'Wall Street Journal',
-    time: '4 hours ago',
-    summary: 'Major tech companies lead market rally as investors gain confidence in economic outlook and corporate earnings.',
-    link: 'https://www.wsj.com',
-    category: 'Market News',
-  },
-  {
-    id: 3,
-    title: 'Beginner\'s Guide: How to Read Financial Statements',
-    source: 'Wall Street Journal',
-    time: '6 hours ago',
-    summary: 'Master the basics of reading balance sheets, income statements, and cash flow reports to make better investment decisions.',
-    link: 'https://www.wsj.com',
-    category: 'Education',
-  },
-  {
-    id: 4,
-    title: 'Index Funds vs Individual Stocks: What New Investors Should Choose',
-    source: 'Wall Street Journal',
-    time: '8 hours ago',
-    summary: 'Exploring the pros and cons of different investment strategies for those just starting their investment journey.',
-    link: 'https://www.wsj.com',
-    category: 'Strategy',
-  },
-];
 
 const tradingApps = [
   {
@@ -99,6 +70,21 @@ export function HomeComponent() {
   const { user } = useAuth();
   const [marketData, setMarketData] = useState<MarketData | null>(null);
   const [loadingMarket, setLoadingMarket] = useState(true);
+  const [insights, setInsights] = useState<InsightItem[]>([]);
+  const [loadingInsights, setLoadingInsights] = useState(true);
+
+  const formatTimeAgo = (dateIso: string): string => {
+    const date = new Date(dateIso.length === 10 ? `${dateIso}T12:00:00` : dateIso);
+    if (isNaN(date.getTime())) return 'Unknown time';
+    const diffSeconds = Math.floor((Date.now() - date.getTime()) / 1000);
+    const minutes = Math.floor(diffSeconds / 60);
+    const hours = Math.floor(diffSeconds / 3600);
+    const days = Math.floor(diffSeconds / 86400);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    return `${days} day${days === 1 ? '' : 's'} ago`;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -115,6 +101,35 @@ export function HomeComponent() {
       })
       .finally(() => {
         if (!cancelled) setLoadingMarket(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/market-insights')
+      .then((res) => (res.ok ? res.json() : { articles: [] }))
+      .then((payload: { articles?: Array<{ id: string; title: string; summary: string; link: string; source: string; publishedAt: string; category: string }> }) => {
+        if (cancelled) return;
+        const nextInsights: InsightItem[] = (payload.articles ?? []).map((item) => ({
+          id: item.id,
+          title: item.title,
+          source: item.source || 'Wall Street Journal',
+          time: formatTimeAgo(item.publishedAt),
+          summary: item.summary,
+          link: item.link,
+          category: item.category || 'Market News',
+        }));
+        setInsights(nextInsights);
+      })
+      .catch((err) => {
+        console.error('Failed to load market insights:', err);
+        if (!cancelled) setInsights([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingInsights(false);
       });
     return () => {
       cancelled = true;
@@ -235,13 +250,17 @@ export function HomeComponent() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Latest Market Insights</h2>
-              <p className="text-sm text-gray-600 mt-1">Curated from The Wall Street Journal</p>
+              <p className="text-sm text-gray-600 mt-1">Curated from live market news sources</p>
             </div>
             <BookOpen className="w-6 h-6 text-gray-400" />
           </div>
 
           <div className="space-y-4">
-            {marketNews.map((news) => (
+            {loadingInsights ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 text-gray-500 text-sm">Loading insights...</div>
+            ) : insights.length === 0 ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 text-gray-500 text-sm">No insights available right now.</div>
+            ) : insights.map((news) => (
               <div key={news.id} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">

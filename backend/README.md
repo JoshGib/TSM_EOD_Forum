@@ -11,12 +11,12 @@ FastAPI service for the forum application: authentication, threads, comments, mo
 
 Create a `.env` file in this directory (`backend/`). Do not commit real credentials.
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Yes | SQLAlchemy URL, e.g. `postgresql+psycopg2://user:password@host:5432/dbname?sslmode=require` |
-| `SEED_ADMIN_EMAIL` | No | Email for the bootstrap admin user (default: `admin@example.com`) |
-| `SEED_ADMIN_USERNAME` | No | Username for the bootstrap admin (default: `admin`) |
-| `SEED_ADMIN_PASSWORD` | No | Plain-text password for the bootstrap admin (default: `password`) |
+| Variable              | Required | Description                                                                                 |
+| --------------------- | -------- | ------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`        | Yes      | SQLAlchemy URL, e.g. `postgresql+psycopg2://user:password@host:5432/dbname?sslmode=require` |
+| `SEED_ADMIN_EMAIL`    | No       | Email for the bootstrap admin user (default: `admin@example.com`)                           |
+| `SEED_ADMIN_USERNAME` | No       | Username for the bootstrap admin (default: `admin`)                                         |
+| `SEED_ADMIN_PASSWORD` | No       | Plain-text password for the bootstrap admin (default: `password`)                           |
 
 Obtain production or shared `DATABASE_URL` values through your team’s usual secret channel (password manager, env template, or maintainer)—never hard-code them in source control.
 
@@ -28,7 +28,7 @@ Obtain production or shared `DATABASE_URL` values through your team’s usual se
    python -m venv venv
    ```
 
-   Activate it (Windows: `venv\Scripts\activate`; macOS/Linux: `source venv/bin/activate`).
+   Activate it (Windows: `.\venv\Scripts\Activate.ps1`; macOS/Linux: `source venv/bin/activate`).
 
 2. **Install dependencies**
 
@@ -67,13 +67,13 @@ Override these in production with `SEED_ADMIN_EMAIL`, `SEED_ADMIN_USERNAME`, and
 
 ## Project layout (high level)
 
-| Path | Role |
-|------|------|
-| `main.py` | FastAPI app, CORS, routers, startup seeding |
-| `db.py` | Engine, session, `DATABASE_URL` from environment |
-| `models.py` | SQLAlchemy models |
-| `routes/` | HTTP routers (auth, threads, comments, admin, reports, blacklist) |
-| `alembic/` | Migration scripts |
+| Path        | Role                                                              |
+| ----------- | ----------------------------------------------------------------- |
+| `main.py`   | FastAPI app, CORS, routers, startup seeding                       |
+| `db.py`     | Engine, session, `DATABASE_URL` from environment                  |
+| `models.py` | SQLAlchemy models                                                 |
+| `routes/`   | HTTP routers (auth, threads, comments, admin, reports, blacklist) |
+| `alembic/`  | Migration scripts                                                 |
 
 ## Related documentation
 

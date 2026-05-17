@@ -24,6 +24,7 @@ export function Navigation() {
   const [isLoading, setIsLoading] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -93,7 +94,12 @@ export function Navigation() {
   // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      const clickedOutsideDesktopSearch =
+        searchRef.current && !searchRef.current.contains(event.target as Node);
+      const clickedOutsideMobileSearch =
+        mobileSearchRef.current && !mobileSearchRef.current.contains(event.target as Node);
+
+      if (clickedOutsideDesktopSearch && clickedOutsideMobileSearch) {
         setShowSuggestions(false);
       }
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -269,7 +275,7 @@ export function Navigation() {
         <div className="md:hidden border-t border-gray-200 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-3">
             {/* Search Bar - Mobile */}
-            <div className="relative w-full">
+            <div className="relative w-full" ref={mobileSearchRef}>
               <input
                 type="text"
                 placeholder="Search US stocks..."

@@ -1,9 +1,9 @@
 'use client';
 
-import { BarChart3, Calendar, MessageSquare, Newspaper, TrendingDown, TrendingUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { BarChart3, Calendar, MessageSquare, Newspaper, TrendingDown, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 const ML_URL = process.env.NEXT_PUBLIC_ML_URL ?? 'https://tsmforumfeed-yeww6.ondigitalocean.app/group-3---main-ml';
@@ -83,8 +83,8 @@ function splitSummary(summaryText: string, reportDate?: string): { title: string
   }
 
   const fallbackTitle = reportDate
-    ? `Market Close · ${formatReportDateStatic(reportDate)}`
-    : "Today's Market Close";
+    ? `${formatReportDateStatic(reportDate)}`
+    : "Today's Market Summary";
   return { title: fallbackTitle, body: trimmed };
 }
 
@@ -114,13 +114,13 @@ function formatTime(dateString: string): string {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
   const minutes = Math.floor(diffInSeconds / 60);
-  const hours   = Math.floor(diffInSeconds / (60 * 60));
-  const days    = Math.floor(diffInSeconds / (60 * 60 * 24));
+  const hours = Math.floor(diffInSeconds / (60 * 60));
+  const days = Math.floor(diffInSeconds / (60 * 60 * 24));
 
   if (diffInSeconds < 60) return 'Just now';   // covers negative diffs (date in future) too
-  if (minutes < 60)       return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-  if (hours < 24)         return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-  if (days < 3)           return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (days < 3) return `${days} day${days > 1 ? 's' : ''} ago`;
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
@@ -227,9 +227,30 @@ export function EODReport() {
 
     const summaryText = latest.summary_text?.trim() || 'Daily market summary';
     const { title, body } = splitSummary(summaryText, latest.report_date);
+    const threadTitle = title || `EOD Discussion - ${formatReportDate(latest.report_date)}`;
+    const threadContent = body || summaryText;
 
     setIsPostingToForum(true);
     try {
+      const existingThreadsResponse = await fetch(`${API_URL}/threads/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (existingThreadsResponse.ok) {
+        const existingThreads = await existingThreadsResponse.json();
+        const existingThread = Array.isArray(existingThreads)
+          ? existingThreads.find((thread: any) =>
+            (thread.category || '') === 'EOD Discussion' &&
+            (thread.title || '').trim().toLowerCase() === threadTitle.trim().toLowerCase()
+          )
+          : null;
+        if (existingThread?.id) {
+          router.push(`/forum?threadId=${existingThread.id}`);
+          return;
+        }
+      }
+
       const response = await fetch(`${API_URL}/threads/`, {
         method: 'POST',
         headers: {
@@ -237,16 +258,21 @@ export function EODReport() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          title: title || `EOD Discussion - ${formatReportDate(latest.report_date)}`,
+          title: threadTitle,
           category: 'EOD Discussion',
-          content: body || summaryText,
+          content: threadContent,
         }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.detail || 'Failed to create discussion thread');
       }
-      router.push('/forum');
+      const created = await response.json().catch(() => ({}));
+      if (created?.id) {
+        router.push(`/forum?threadId=${created.id}`);
+      } else {
+        router.push('/forum');
+      }
     } catch (error) {
       console.error('Error creating forum thread:', error);
       alert(error instanceof Error ? error.message : 'Failed to create discussion thread');
@@ -258,10 +284,10 @@ export function EODReport() {
   const sectors =
     liveUpdates[0]?.sectors?.length
       ? liveUpdates[0].sectors.map((s) => ({
-          name: s.sector_name,
-          change: Math.abs(parseFloat(s.performance_percentage) || 0),
-          isPositive: s.is_positive,
-        }))
+        name: s.sector_name,
+        change: Math.abs(parseFloat(s.performance_percentage) || 0),
+        isPositive: s.is_positive,
+      }))
       : marketData?.sectorPerformance ?? [];
 
   return (
@@ -356,6 +382,15 @@ export function EODReport() {
                   const { title, body } = splitSummary(update.summary_text, update.report_date);
                   const dateLabel = formatTime(update.report_date);
                   const ToneIcon = tone.Icon;
+                  const sources = Array.from(
+                    new Set(
+                      (update.source_urls || '')
+                        .split(/[|,]/)
+                        .map((s) => s.trim())
+                        .filter((url) => /^https?:\/\//i.test(url))
+                    )
+                  );
+                  const visibleSources = sources.slice(0, 3);
                   return (
                     <a
                       key={update.id}
@@ -387,6 +422,39 @@ export function EODReport() {
                             <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
                               {body}
                             </p>
+                          ) : null}
+                          {visibleSources.length > 0 ? (
+                            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                Source articles
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2">
+                              {visibleSources.map((url) => {
+                                let host = url;
+                                try {
+                                  host = new URL(url).hostname.replace(/^www\./, '');
+                                } catch { }
+                                return (
+                                  <a
+                                    key={url}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    title={url}
+                                    className="inline-flex items-center rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                  >
+                                    {host}
+                                  </a>
+                                );
+                              })}
+                              {sources.length > visibleSources.length ? (
+                                <span className="text-xs text-gray-500">
+                                  +{sources.length - visibleSources.length} more
+                                </span>
+                              ) : null}
+                              </div>
+                            </div>
                           ) : null}
                         </div>
                       </div>

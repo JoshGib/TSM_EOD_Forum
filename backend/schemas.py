@@ -68,6 +68,9 @@ class CommentCreate(BaseModel):
     thread_id: int
     parent_comment_id: Optional[int] = None
 
+class CommentUpdate(BaseModel):
+    content: str
+
 class CommentOut(BaseModel):
     id: int
     content: str
