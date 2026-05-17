@@ -98,6 +98,32 @@ function formatReportDateStatic(isoDate: string): string {
   });
 }
 
+function formatTime(dateString: string): string {
+  if (!dateString) return 'Unknown time';
+
+  // If it's a date-only string (YYYY-MM-DD), anchor it at local noon so
+  // "today's report" doesn't read as "8 hours ago" depending on timezone.
+  // Otherwise treat it as an ISO timestamp (with or without a 'Z' suffix).
+  const isoTimestamp = dateString.length === 10
+    ? `${dateString}T12:00:00`
+    : (dateString.endsWith('Z') ? dateString : `${dateString}Z`);
+
+  const date = new Date(isoTimestamp);
+  if (isNaN(date.getTime())) return 'Unknown time';
+
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const minutes = Math.floor(diffInSeconds / 60);
+  const hours   = Math.floor(diffInSeconds / (60 * 60));
+  const days    = Math.floor(diffInSeconds / (60 * 60 * 24));
+
+  if (diffInSeconds < 60) return 'Just now';   // covers negative diffs (date in future) too
+  if (minutes < 60)       return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  if (hours < 24)         return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (days < 3)           return `${days} day${days > 1 ? 's' : ''} ago`;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 function getToneStyle(tone: string): {
   label: string;
   Icon: LucideIcon;
@@ -329,7 +355,7 @@ export function EODReport() {
                 liveUpdates.map((update) => {
                   const tone = getToneStyle(update.market_tone || 'Neutral');
                   const { title, body } = splitSummary(update.summary_text, update.report_date);
-                  const dateLabel = formatReportDate(update.report_date);
+                  const dateLabel = formatTime(update.report_date);
                   const ToneIcon = tone.Icon;
                   return (
                     <a
