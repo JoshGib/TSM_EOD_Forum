@@ -147,7 +147,7 @@ class FinancialSummaryOut(BaseModel):
     market_tone: str
     source_urls: Optional[str] = None
     created_at: datetime
-    sectors: list[SectorPerformanceOut] = []
+    sectors: List["SectorPerformanceOut"] = []
 
     class Config:
         from_attributes = True

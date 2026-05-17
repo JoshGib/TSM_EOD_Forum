@@ -1,8 +1,10 @@
 'use client'
 
-import { Calendar, ChevronDown, ChevronUp, Clock, Edit2, Filter, Flag, MessageSquare, MoreVertical, Plus, Search, Send, ThumbsUp, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { MessageSquare, ThumbsUp, Eye, Clock, Search, Filter, Plus, TrendingUp, Calendar, Sparkles, Send, Flag, ChevronDown, ChevronUp, MoreVertical, Trash2, Edit2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+
 
 
 interface Comment {
@@ -47,9 +49,6 @@ export function Forum() {
 
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportingComment, setReportingComment] = useState<Comment | null>(null);
-  const [selectedReportReason, setSelectedReportReason] = useState('');
-  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
-  const [reportError, setReportError] = useState<string | null>(null);
 
   const [newThreadTitle, setNewThreadTitle] = useState('');
   const [newThreadContent, setNewThreadContent] = useState('');
@@ -66,6 +65,8 @@ export function Forum() {
   const [showEditThreadModal, setShowEditThreadModal] = useState(false);
   const [showEditCommentModal, setShowEditCommentModal] = useState(false);
   const [threadMenuOpen, setThreadMenuOpen] = useState<number | null>(null);
+
+  const [authMessage, setAuthMessage] = useState('');
 
 const categories = [
   'All Categories',
@@ -160,41 +161,24 @@ const getThreadComments = (threadId: number) => {
 const handleLikeThread = async (threadId: number) => {
   if (!user) return;
   const isLiked = likedThreads.has(threadId);
-  if (isLiked) {
-    setLikedThreads(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(threadId);
-      return newSet;
-    });
-    setForumThreads(prev => prev.map(t => t.id === threadId ? { ...t, likes: Math.max(0, t.likes - 1) } : t));
-  } else {
-    setLikedThreads(prev => new Set(prev).add(threadId));
-    setForumThreads(prev => prev.map(t => t.id === threadId ? { ...t, likes: t.likes + 1 } : t));
-  }
   try {
-    const response = await fetch(`${API_URL}/threads/${threadId}/${isLiked ? 'unlike' : 'like'}`, {
+    await fetch(`${API_URL}/threads/${threadId}/${isLiked ? 'unlike' : 'like'}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
     });
-    if (!response.ok) {
-      throw new Error('Failed to like thread');
-    }
-  } catch (error) {
-    // revert optimistic update
     if (isLiked) {
-      setLikedThreads(prev => new Set(prev).add(threadId));
-      setForumThreads(prev => prev.map(t => t.id === threadId ? { ...t, likes: t.likes + 1 } : t));
-    } else {
       setLikedThreads(prev => {
         const newSet = new Set(prev);
         newSet.delete(threadId);
         return newSet;
       });
-      setForumThreads(prev => prev.map(t => t.id === threadId ? { ...t, likes: Math.max(0, t.likes - 1) } : t));
+    } else {
+      setLikedThreads(prev => new Set(prev).add(threadId));
     }
+  } catch (error) {
     console.error('Error liking thread:', error);
   }
 };
@@ -202,48 +186,54 @@ const handleLikeThread = async (threadId: number) => {
 const handleLikeComment = async (commentId: number) => {
   if (!user) return;
   const isLiked = likedComments.has(commentId);
-  if (isLiked) {
-    setLikedComments(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(commentId);
-      return newSet;
-    });
-    setComments(prev => prev.map(c => c.id === commentId ? { ...c, likes: Math.max(0, c.likes - 1) } : c));
-  } else {
-    setLikedComments(prev => new Set(prev).add(commentId));
-    setComments(prev => prev.map(c => c.id === commentId ? { ...c, likes: c.likes + 1 } : c));
-  }
   try {
-    const response = await fetch(`${API_URL}/comments/${commentId}/${isLiked ? 'unlike' : 'like'}`, {
+    await fetch(`${API_URL}/comments/${commentId}/${isLiked ? 'unlike' : 'like'}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
     });
-    if (!response.ok) {
-      throw new Error('Failed to like comment');
-    }
-  } catch (error) {
-    // revert optimistic update
     if (isLiked) {
-      setLikedComments(prev => new Set(prev).add(commentId));
-      setComments(prev => prev.map(c => c.id === commentId ? { ...c, likes: c.likes + 1 } : c));
-    } else {
       setLikedComments(prev => {
         const newSet = new Set(prev);
         newSet.delete(commentId);
         return newSet;
       });
-      setComments(prev => prev.map(c => c.id === commentId ? { ...c, likes: Math.max(0, c.likes - 1) } : c));
+    } else {
+      setLikedComments(prev => new Set(prev).add(commentId));
     }
+  } catch (error) {
     console.error('Error liking comment:', error);
   }
 };
 
+
+const router = useRouter();
+
+const requireAuth = () => {
+    if (!user) {
+    router.push('/login?redirect=/forum');
+    return false;
+  } return true;
+};
+
+const handleNewThread= () => {
+  
+  if (!requireAuth()) return;
+  
+  setShowNewThreadModal(true);
+};
+
+
 const handlePostComment = async (threadId: number) => {
   const content = newCommentText[threadId]?.trim();
-  if (!content || !user) return
+  if (!content) return
+  if(!user){
+    setAuthMessage ('You need to login to post a comment. ')
+    setTimeout(() => setAuthMessage(''), 10000);
+    return;
+  }
   try {
     await fetch(`${API_URL}/comments/`, {
       method: 'POST',
@@ -266,8 +256,6 @@ const handlePostComment = async (threadId: number) => {
 
 const handleReportComment = (comment: Comment) => {
   setReportingComment(comment);
-  setSelectedReportReason('');
-  setReportError(null);
   setShowReportModal(true);
 };
 
@@ -353,40 +341,22 @@ const handleDeleteComment = async (commentId: number, threadId: number) => {
   }
 };
 
-const submitReport = async () => {
-  if (!reportingComment || !selectedReportReason || isSubmittingReport) return;
-  const token = localStorage.getItem('token') || localStorage.getItem('Token');
-  if (!token) {
-    setReportError('Please log in to submit a report.');
-    return;
-  }
-  setIsSubmittingReport(true);
-  setReportError(null);
+const submitReport = async (reason: string) => {
+  if (!reportingComment) return;
   try {
-    const response = await fetch(`${API_URL}/reports/`, {
+    await fetch(`${API_URL}/reports/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
       body: JSON.stringify({
         comment_id: reportingComment.id,
-        reported_user_id: reportingComment.userId,
-        reason: selectedReportReason,
+        reason,
       }),
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.detail || 'Unable to submit report');
-    }
-    setShowReportModal(false);
-    setReportingComment(null);
-    setSelectedReportReason('');
   } catch (error) {
-    setReportError(error instanceof Error ? error.message : 'Unable to submit report');
     console.error('Error submitting report:', error);
-  } finally {
-    setIsSubmittingReport(false);
   }
 };
 const [isPosting, setIsPosting] = useState(false);
@@ -478,6 +448,7 @@ const formatTime = (dateString: string) => {
 };
 
 
+
 const filteredThreads = forumThreads.filter(t => {
   const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) || t.content.toLowerCase().includes(searchQuery.toLowerCase());
   const matchesCategory = selectedCategory === 'All Categories' || t.category === selectedCategory;
@@ -502,7 +473,7 @@ const filteredThreads = forumThreads.filter(t => {
             </p>
           </div>
           <button
-            onClick={() => setShowNewThreadModal(true)}
+            onClick={handleNewThread}
             className="mt-4 sm:mt-0 flex items-center space-x-2 px-6 py-3 bg-blue-950 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             <Plus className="w-5 h-5" />
@@ -559,7 +530,7 @@ const filteredThreads = forumThreads.filter(t => {
       </div>
 
       {/* Forum Stats */}
-      {/* <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="text-2xl font-bold text-gray-900">156</div>
           <div className="text-sm text-gray-600">Total Threads</div>
@@ -576,7 +547,7 @@ const filteredThreads = forumThreads.filter(t => {
           <div className="text-2xl font-bold text-gray-900">23</div>
           <div className="text-sm text-gray-600">Active Now</div>
         </div>
-      </div> */}
+      </div>
 
       {/* Thread List */}
       <div className="space-y-4">
@@ -799,7 +770,13 @@ const filteredThreads = forumThreads.filter(t => {
                           {user?.name?.charAt(0).toUpperCase() || 'A'}
                         </span>
                       </div>
+                     
                       <div className="flex-1">
+                        {authMessage && (
+                          <div className="mb-2 p-2 bg-yellow-100 text-yellow-800 rounded-lg text-sm">
+                            {authMessage}
+                            </div>
+                        )}
                         <textarea
                           value={newCommentText[thread.id] || ''}
                           onChange={(e) => setNewCommentText(prev => ({ ...prev, [thread.id]: e.target.value }))}
@@ -807,6 +784,7 @@ const filteredThreads = forumThreads.filter(t => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
                           rows={3}
                         />
+
                         <div className="flex items-center justify-end mt-2">
                           <button
                             onClick={() => handlePostComment(thread.id)}
@@ -921,42 +899,23 @@ const filteredThreads = forumThreads.filter(t => {
               {['Spam/Scam', 'Harassment/Bullying', 'Offensive Language', 'Misinformation', 'Other'].map((reason) => (
                 <button
                   key={reason}
-                  type="button"
-                  onClick={() => setSelectedReportReason(reason)}
-                  className={`w-full text-left px-4 py-3 border rounded-lg transition-colors text-sm ${
-                    selectedReportReason === reason ? 'border-red-400 bg-red-50 text-red-700' : 'border-gray-300 hover:bg-gray-50'
-                  }`}
+                  onClick={() => submitReport(reason)}
+                  className="w-full text-left px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                 >
                   {reason}
                 </button>
               ))}
             </div>
-            {reportError && (
-              <p className="text-sm text-red-600 mb-4">{reportError}</p>
-            )}
 
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowReportModal(false);
-                  setReportingComment(null);
-                  setSelectedReportReason('');
-                  setReportError(null);
-                }}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={submitReport}
-                disabled={!selectedReportReason || isSubmittingReport}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmittingReport ? 'Submitting...' : 'Submit Report'}
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                setShowReportModal(false);
+                setReportingComment(null);
+              }}
+              className="w-full px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
