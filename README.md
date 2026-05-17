@@ -196,6 +196,18 @@ npm install
    tos ee stored susers:
    SELECT \* FROM users;
 
+
+   Now for the database in supabase.
+   For database acess
+1. Create an .env and put the DATABASE_URL that is in the final project report.
+2. Instal deps
+pip install -r requirements.txt
+3. run migrations
+alembic upgrade head
+4. in alembic.ini place the databse url in this line 
+
+sqlalchemy.url = put the url that is in the final project report
+
 Stack used
 Next.js
 fastAPI,

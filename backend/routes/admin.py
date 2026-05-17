@@ -16,7 +16,7 @@ class BlacklistRequest(BaseModel):
     reason: str
     is_permanent: bool = True
     days: int | None = None
-
+    
 
 @router.get("/reports")
 def get_reports(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
