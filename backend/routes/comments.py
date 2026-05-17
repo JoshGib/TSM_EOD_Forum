@@ -4,7 +4,7 @@ from db import get_db
 from models import Comment, User, Thread
 from schemas import CommentCreate, CommentOut
 from auth import get_current_user
-from datetime import datetime,timezone
+from datetime import datetime
 
 router = APIRouter(prefix="/comments", tags=["comments"])
 
