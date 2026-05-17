@@ -76,6 +76,10 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+function isNonNull<T>(value: T | null): value is T {
+  return value !== null;
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -173,9 +177,9 @@ async function buildMarketData(): Promise<MarketDataResponse> {
       change: round2(Math.abs(quote.percent)),
       isPositive: quote.percent >= 0,
     };
-  }).filter((s): s is SectorRow => s !== null);
+  }).filter(isNonNull);
 
-  const validStocks = stockQuotes.filter((r): r is StockMover => r !== null);
+  const validStocks = stockQuotes.filter(isNonNull);
   const sorted = [...validStocks].sort((a, b) => b.change - a.change);
 
   return {
