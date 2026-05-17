@@ -301,7 +301,7 @@ export function EODReport() {
               </h1>
             </div>
             <p className="text-gray-600 mb-2">
-              AI-Powered Summary from Wall Street Journal Articles
+              AI-Powered Summary of Today's Market Developments
             </p>
             <div className="flex items-center space-x-2 text-gray-600">
               <Calendar className="w-5 h-5" />
