@@ -7,9 +7,11 @@ Live EOD stock market summarization pipeline using:
 - article summarization
 - FinBERT sentiment analysis
 - Fined tuned bart summarization of combined article summaries
-This is a script meant to run at 5pm each day and will cycly through 2 hours of information from the news api to reover the full days worht of info. 
+This is a script meant to run at 5pm each day and will cycle through 2 hours of information from the news api to recover the full days worth of info. 
 Originally I have hoped for the info to be real time and not laged behind by 2 days but without the API premium coverage I was unable to do so. 
-This is currently running on azure with a timer trigger set for 5pm eastern time.
+This is currently running on azure with a timer trigger set for 5am eastern time.
+If it wasnt for the fact that the free news tier didnt let me synch to real time 
+The information wouuld have been synched for real time and not lagged by the day and at 5 am.
 """
 
 from newsapi import NewsApiClient
