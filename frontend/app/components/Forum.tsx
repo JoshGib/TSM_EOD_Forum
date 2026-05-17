@@ -66,6 +66,8 @@ export function Forum() {
   const [showEditCommentModal, setShowEditCommentModal] = useState(false);
   const [threadMenuOpen, setThreadMenuOpen] = useState<number | null>(null);
 
+  const [loadingComments, setLoadingComments] = useState<Set<number>>(new Set());
+
   const [authMessage, setAuthMessage] = useState('');
 
 const categories = [
@@ -108,6 +110,7 @@ const fetchThreads = async () => {
 };
 
 const fetchComments = async (threadId: number) => {
+  setLoadingComments(prev => new Set(prev).add(threadId));
   try {
     const response = await fetch(`${API_URL}/comments/thread/${threadId}`);
     const data = await response.json();
@@ -130,6 +133,12 @@ const fetchComments = async (threadId: number) => {
   
   } catch (error) {
     console.error('Error fetching comments:', error);
+  } finally{
+    setLoadingComments(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(threadId);
+      return newSet;
+    })
   }
 };
 
@@ -687,7 +696,7 @@ const filteredThreads = forumThreads.filter(t => {
                 <div className="border-t border-gray-200 bg-gray-50 p-6">
                   {/* Existing Comments */}
                   <div className="space-y-4 mb-4">
-                    {isExpanded&& threadComments.length === 0 ? (
+                    {loadingComments.has(thread.id) ? (
                       <p className="text-gray-500 text-sm text-center py-4">
                         Loading comments...
                       </p>
