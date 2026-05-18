@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { AlertTriangle, Ban, ChevronDown, ChevronUp, Shield, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { AdminRoute } from '../components/ProtectedRoute';
-import { Shield, ChevronDown, ChevronUp, Trash2, Ban, AlertTriangle, UserRoundIcon } from 'lucide-react';
 
 interface FlagReason {
   userId: string;
@@ -94,6 +94,9 @@ interface ReportedComment {
 //   },
 // ];
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
+
 function AdminPageContent() {
   const [reports, setReports] = useState<ReportedComment[]>([]);
   const [expandedReports, setExpandedReports] = useState<Set<number>>(new Set());
@@ -106,7 +109,7 @@ function AdminPageContent() {
       setLoading(true);
       const token = localStorage.getItem('token');
       const res = await fetch(
-        "http://127.0.0.1:8000/admin/reports",
+        `${API_URL}/admin/reports`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -162,7 +165,7 @@ function AdminPageContent() {
     if(!commentId)
       return;
     if (confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
-      await fetch(`http://127.0.0.1:8000/admin/comments/${commentId}`, {
+      await fetch(`${API_URL}/admin/comments/${commentId}`, {
         method: 'DELETE',
         headers: {
       Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -176,7 +179,7 @@ function AdminPageContent() {
 
   const handleBlacklistUser = async (reportId: number, userId: number, userName: string) => {
     if (window.confirm(`Are you sure you want to blacklist user "${userName}"? They will no longer be able to post.`)) {
-      await fetch(`http://127.0.0.1:8000/admin/blacklist/${userId}`, {
+      await fetch(`${API_URL}/admin/blacklist/${userId}`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -191,7 +194,7 @@ function AdminPageContent() {
 
   const handleDismiss = async (reportId: number) => {
     if (confirm('Are you sure you want to dismiss this report?')) {
-      await fetch(`http://127.0.0.1:8000/admin/reports/${reportId}/dismiss`, {
+      await fetch(`${API_URL}/admin/reports/${reportId}/dismiss`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
