@@ -1,6 +1,6 @@
 """
 app.py
-FastAPI backend hosted on Hugging Face Spaces by Reinald Peguero
+FastAPI backend hosted on Digital Ocean by Reinald Peguero
 
 Endpoints:
   POST /generate  — reads test_original_generated_texts.csv, cleans it,
@@ -45,10 +45,12 @@ OUTPUT_CSV = "/tmp/test_OGTexts_cleaned.csv"
 OUTPUT_HTML = "/tmp/test_reports.html"
 
 # Database (PostgreSQL via SQLAlchemy)
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://forum_user:password123@localhost:5432/forum_db",
-)
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is not set. Define it in your environment or in a local "
+        ".env file (e.g. postgresql://<user>:<password>@<host>:<port>/<db>)."
+    )
 
 # pool_pre_ping=True transparently recycles dead connections (useful when the
 # DB restarts or sits behind a load balancer that drops idle conns).
